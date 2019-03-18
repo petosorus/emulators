@@ -1,5 +1,5 @@
 [package]
-name = "dis8080"
+name = "emulator"
 version = "0.1.0"
 authors = ["Thomas Graviou <thomas.graviou@vif.fr>"]
 edition = "2018"
