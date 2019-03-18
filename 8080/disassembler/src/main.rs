@@ -1,6 +1,6 @@
 use std::fs;
 
-fn disassemble8080op(codebuffer: Vec<u8>, pc: usize) -> usize {
+fn disassemble8080op(codebuffer: &Vec<u8>, pc: usize) -> usize {
     let code: &u8 = codebuffer.get(pc).expect("oh oh");
     let mut opbytes: usize = 1;
 
@@ -8,7 +8,7 @@ fn disassemble8080op(codebuffer: Vec<u8>, pc: usize) -> usize {
         0x00 => println!("NOP"),
         0x01 => {
             println!(
-                "LXI    B,#${}02x{}02x",
+                "LXI    B,#${:02x}{:02x}",
                 codebuffer[pc + 2],
                 codebuffer[pc + 1]
             );
@@ -19,11 +19,33 @@ fn disassemble8080op(codebuffer: Vec<u8>, pc: usize) -> usize {
         0x04 => println!("INR    B"),
         0x05 => println!("DCR    B"),
         0x06 => {
-            println!("MVI    B,#${}02x", codebuffer[pc + 1]);
+            println!("MVI    B,#${:02x}", codebuffer[pc + 1]);
             opbytes = 2;
         }
         0x07 => println!("RLC"),
         0x08 => println!("NOP"),
+        0x09 => println!("DAD   B"),
+        0x0a => println!("LDAX  B"),
+        0x0b => println!("DCX   B"),
+        0x0c => println!("INCR  C"),
+        0x0d => println!("DCR   C"),
+        0x0e => {
+            println!("MVI   C,#${:02x}", codebuffer[pc + 1]);
+            opbytes = 2;
+        },
+        0x0f => println!("RRC"),
+        0x11 => {
+            println!("LXI   D,{:02x}{:02x}", codebuffer[pc + 2], codebuffer[pc + 1]);
+            opbytes = 3;
+        },
+        0x3e => {
+            println!("MVI    A,#{:02x}", codebuffer[pc + 1]);
+            opbytes = 2;
+        },
+        0xc3 => {
+            println!("JMP    ${:02x}{:02x}", codebuffer[pc + 2], codebuffer[pc + 1]);
+            opbytes = 3;
+        },
         &_ => {}
     }
 
@@ -32,13 +54,12 @@ fn disassemble8080op(codebuffer: Vec<u8>, pc: usize) -> usize {
 
 fn main() {
 
-    let filename = "poem.txt";
+    let filename = "invaders.h";
     let rom: Vec<u8> = fs::read(filename)
         .expect("Something wrong");        
-
-    
     let mut pc: usize = 0;
-    pc += disassemble8080op(rom, pc);
 
-    println!("{}", pc)
+    while pc < rom.len() {
+        pc += disassemble8080op(&rom, pc);
+    }
 }
