@@ -61,18 +61,18 @@ fn disassemble8080op(codebuffer: &Vec<u8>, pc: usize) -> usize {
         0x1f => { println!("RAR") },
         0x20 => { println!("RIM") },
         0x21 => {
-            println!("LXI   H,{:02x}{:02x}", codebuffer[pc + 2], codebuffer[pc + 1]);
+            println!("LXI   H,#${:02x}{:02x}", codebuffer[pc + 2], codebuffer[pc + 1]);
             opbytes = 3;
         },
         0x22 => {
-            println!("SHLD  {:02x}{:02x}", codebuffer[pc + 2], codebuffer[pc + 1]);
+            println!("SHLD  #${:02x}{:02x}", codebuffer[pc + 2], codebuffer[pc + 1]);
             opbytes = 3;
         },
         0x23 => { println!("INX    H") },
         0x24 => { println!("INR    H") },
         0x25 => { println!("DCR    H") },
         0x26 => {
-            println!("MVI    H,#{:02x}", codebuffer[pc + 1]);
+            println!("MVI    H,#${:02x}", codebuffer[pc + 1]);
             opbytes = 2;
         },
         0x27 => { println!("DAA") },
@@ -96,7 +96,7 @@ fn disassemble8080op(codebuffer: &Vec<u8>, pc: usize) -> usize {
             opbytes = 3;
         },
         0x32 => {
-            println!("sta    ${:02x}{:02x}", codebuffer[pc + 2], codebuffer[pc + 1]);
+            println!("STA   ${:02x}{:02x}", codebuffer[pc + 2], codebuffer[pc + 1]);
             opbytes = 3;
         },
         0x33 => { println!("INX SP") },
@@ -316,7 +316,7 @@ fn disassemble8080op(codebuffer: &Vec<u8>, pc: usize) -> usize {
             opbytes = 3;
         },
         0xdb => {
-            println!("IN   ${:02x}", codebuffer[pc + 1]);
+            println!("IN   #${:02x}", codebuffer[pc + 1]);
             opbytes = 2;
         },
         0xdc => {
@@ -393,7 +393,7 @@ fn disassemble8080op(codebuffer: &Vec<u8>, pc: usize) -> usize {
         },
         // 0xfd
         0xfe => {
-            println!("CPI   ${:02x}", codebuffer[pc + 1]);
+            println!("CPI   #${:02x}", codebuffer[pc + 1]);
             opbytes = 2;
         },
         0xff => { println!("RST 7") },
@@ -405,7 +405,7 @@ fn disassemble8080op(codebuffer: &Vec<u8>, pc: usize) -> usize {
 
 fn main() {
 
-    let filename = "invaders.h";
+    let filename = "invaders";
     let rom: Vec<u8> = fs::read(filename)
         .expect("Something wrong");        
     let mut pc: usize = 0;
