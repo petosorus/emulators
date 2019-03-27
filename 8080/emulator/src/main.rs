@@ -26,13 +26,13 @@ fn emulate8080_op(state: &mut State8080) {
     let code: u8 = state.memory[state.pc];
 
     match code {
-        0x00 => {},
+        0x00 => {}
         0x01 => {
             state.pc += 1;
             state.c = state.memory[state.pc];
             state.pc += 1;
             state.b = state.memory[state.pc];
-        },
+        }
         0x02 => println!("STAX   B"),
         0x03 => println!("INX    B"),
         0x04 => println!("INR    B"),
