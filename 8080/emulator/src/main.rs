@@ -1,3 +1,5 @@
+use std::fs;
+
 struct ConditionCodes {
     z: bool,
     s: bool,
@@ -24,6 +26,7 @@ struct State8080 {
 
 fn emulate8080_op(state: &mut State8080) {
     let code: u8 = state.memory[state.pc];
+    
 
     match code {
         0x00 => {}
@@ -316,11 +319,13 @@ fn main() {
         int_enable: 0,
     };
 
-    state.memory.push(1);
-    state.memory.push(12);
-    state.memory.push(123);
-
-    emulate8080_op(&mut state);
+    let filename = "invaders.rom";
+    state.memory = fs::read(filename).expect("Something wrong");
+    
+    while state.pc < state.memory.len() {
+        emulate8080_op(&mut state);
+        state.pc += 1;
+    }
 
     println!("b {}, c {}, pc {}", state.b, state.c, state.pc);
 }
