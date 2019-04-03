@@ -1,4 +1,5 @@
 use std::fs;
+mod disassembler;
 
 struct ConditionCodes {
     z: bool,
@@ -24,10 +25,18 @@ struct State8080 {
     int_enable: u8,
 }
 
+fn get16bit(lower_byte: u8, higher_byte: u8) -> usize {
+    let result: usize = (higher_byte as usize) << 8 | ( lower_byte as usize);
+    result
+}
+
+fn parity(value: u8) -> bool {
+    value % 2 == 0
+}
+
 fn emulate8080_op(state: &mut State8080) {
     let code: u8 = state.memory[state.pc];
     
-
     match code {
         0x00 => {}
         0x01 => {
@@ -229,7 +238,13 @@ fn emulate8080_op(state: &mut State8080) {
         0xc0 => unimplemented!(),
         0xc1 => unimplemented!(),
         0xc2 => unimplemented!(),
-        0xc3 => unimplemented!(),
+        0xc3 => {
+            state.pc += 1;
+            let lower_byte = state.memory[state.pc];
+            state.pc += 1;
+            let higher_byte = state.memory[state.pc];
+            state.pc = get16bit(lower_byte, higher_byte);
+        }
         0xc4 => unimplemented!(),
         0xc5 => unimplemented!(),
         0xc6 => unimplemented!(),
@@ -323,6 +338,7 @@ fn main() {
     state.memory = fs::read(filename).expect("Something wrong");
     
     while state.pc < state.memory.len() {
+        disassembler::disassemble8080op(&state.memory, state.pc);
         emulate8080_op(&mut state);
         state.pc += 1;
     }
