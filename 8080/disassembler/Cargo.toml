@@ -1,7 +1,0 @@
-[package]
-name = "disassembler"
-version = "0.1.0"
-authors = ["Thomas Graviou <thomas.graviou@vif.fr>"]
-edition = "2018"
-
-[dependencies]
