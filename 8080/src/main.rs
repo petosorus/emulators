@@ -1,7 +1,7 @@
 use std::fs;
 mod disassembler;
 
-struct ConditionCodes {
+struct Flags {
     z: bool,
     s: bool,
     p: bool,
@@ -18,10 +18,11 @@ struct State8080 {
     e: u8,
     h: u8,
     l: u8,
+    m: u8,
     sp: u16,
     pc: usize,
     memory: Vec<u8>,
-    cc: ConditionCodes,
+    flags: Flags,
     int_enable: u8,
 }
 
@@ -30,8 +31,42 @@ fn get16bit(lower_byte: u8, higher_byte: u8) -> usize {
     result
 }
 
-fn parity(value: u8) -> bool {
-    value % 2 == 0
+fn zero(value: u8, flags: &mut Flags) {
+    if value == 0 {
+        flags.z = true;
+    } else {
+        flags.z = false;
+    }
+}
+
+fn sign(value: u8, flags: &mut Flags) {
+    if value | 128 == 0 {
+        flags.s = false;
+    } else {
+        flags.s = true;
+    }
+}
+
+fn parity(value: u8, flags: &mut Flags) {
+    if value % 2 == 0 {
+        flags.p = true;
+    } else {
+        flags.p = false;
+    }
+}
+
+
+fn handle_condition_codes(value: u8, flags: &mut Flags) {
+    zero(value, flags);
+    sign(value, flags);
+    parity(value, flags);
+}
+
+fn inr(pc: &mut usize, register: &mut u8, flags: &mut Flags) {
+    *register += 1;
+    *pc += 1;
+
+    handle_condition_codes(*register, flags);
 }
 
 fn emulate8080_op(state: &mut State8080) {
@@ -47,7 +82,9 @@ fn emulate8080_op(state: &mut State8080) {
         }
         0x02 => unimplemented!(),
         0x03 => unimplemented!(),
-        0x04 => unimplemented!(),
+        0x04 => {
+            inr(&mut state.pc, &mut state.b, &mut state.flags);
+        }
         0x05 => unimplemented!(),
         0x06 => unimplemented!(),
         0x07 => unimplemented!(),
@@ -55,7 +92,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x09 => unimplemented!(),
         0x0a => unimplemented!(),
         0x0b => unimplemented!(),
-        0x0c => unimplemented!(),
+        0x0c => {
+            inr(&mut state.pc, &mut state.c, &mut state.flags);
+        }
         0x0d => unimplemented!(),
         0x0e => unimplemented!(),
         0x0f => unimplemented!(),
@@ -63,7 +102,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x11 => unimplemented!(),
         0x12 => unimplemented!(),
         0x13 => unimplemented!(),
-        0x14 => unimplemented!(),
+        0x14 => {
+            inr(&mut state.pc, &mut state.d, &mut state.flags);
+        }
         0x15 => unimplemented!(),
         0x16 => unimplemented!(),
         0x17 => unimplemented!(),
@@ -71,7 +112,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x19 => unimplemented!(),
         0x1a => unimplemented!(),
         0x1b => unimplemented!(),
-        0x1c => unimplemented!(),
+        0x1c => {
+            inr(&mut state.pc, &mut state.e, &mut state.flags);
+        }
         0x1d => unimplemented!(),
         0x1e => unimplemented!(),
         0x1f => unimplemented!(),
@@ -79,7 +122,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x21 => unimplemented!(),
         0x22 => unimplemented!(),
         0x23 => unimplemented!(),
-        0x24 => unimplemented!(),
+        0x24 => {
+            inr(&mut state.pc, &mut state.h, &mut state.flags);
+        }
         0x25 => unimplemented!(),
         0x26 => unimplemented!(),
         0x27 => unimplemented!(),
@@ -87,7 +132,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x29 => unimplemented!(),
         0x2a => unimplemented!(),
         0x2b => unimplemented!(),
-        0x2c => unimplemented!(),
+        0x2c => {
+            inr(&mut state.pc, &mut state.l, &mut state.flags);
+        }
         0x2d => unimplemented!(),
         0x2e => unimplemented!(),
         0x2f => unimplemented!(),
@@ -95,7 +142,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x31 => unimplemented!(),
         0x32 => unimplemented!(),
         0x33 => unimplemented!(),
-        0x34 => unimplemented!(),
+        0x34 => {
+            inr(&mut state.pc, &mut state.m, &mut state.flags);
+        }
         0x35 => unimplemented!(),
         0x36 => unimplemented!(),
         0x37 => unimplemented!(),
@@ -103,7 +152,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x39 => unimplemented!(),
         0x3a => unimplemented!(),
         0x3b => unimplemented!(),
-        0x3c => unimplemented!(),
+        0x3c => {
+            inr(&mut state.pc, &mut state.a, &mut state.flags);
+        }
         0x3d => unimplemented!(),
         0x3e => unimplemented!(),
         0x3f => unimplemented!(),
@@ -304,13 +355,13 @@ fn emulate8080_op(state: &mut State8080) {
         0xfc => unimplemented!(),
         0xfd => unimplemented!(),
         0xfe => unimplemented!(),
-        0xff => unimplemented!(),
-        _ => {}
+        0xff => unimplemented!()
     }
 }
 
 fn main() {
-    let cc = ConditionCodes {
+
+    let flags = Flags {
         z: false,
         s: false,
         p: false,
@@ -327,10 +378,11 @@ fn main() {
         e: 0,
         h: 0,
         l: 0,
+        m: 0,
         sp: 0,
         pc: 0,
         memory: Vec::new(),
-        cc: cc,
+        flags: flags,
         int_enable: 0,
     };
 
