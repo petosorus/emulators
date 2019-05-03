@@ -20,15 +20,33 @@ struct State8080 {
     l: u8,
     m: u8,
     sp: u16,
-    pc: usize,
+    pc: u16,
     memory: Vec<u8>,
     flags: Flags,
     int_enable: u8,
 }
 
-fn get16bit(lower_byte: u8, higher_byte: u8) -> usize {
-    let result: usize = (higher_byte as usize) << 8 | ( lower_byte as usize);
+impl State8080 {
+    fn get(&self, index: u16) -> u8 {
+        self.memory[index as usize]
+    }
+
+    fn set(&mut self, index: u16, value: u8) {
+        self.memory[index as usize] = value;
+    }
+}
+
+fn get16bit(lower_byte: u8, higher_byte: u8) -> u16 {
+    let result: u16 = (higher_byte as u16) << 8 | ( lower_byte as u16);
     result
+}
+
+fn get_lower8(value: u16) -> u8 {
+    (value as u8)
+}
+
+fn get_higher8(value: u16) -> u8 {
+    (value >> 8) as u8
 }
 
 fn zero(value: u8, flags: &mut Flags) {
@@ -62,23 +80,41 @@ fn handle_condition_codes(value: u8, flags: &mut Flags) {
     parity(value, flags);
 }
 
-fn inr(pc: &mut usize, register: &mut u8, flags: &mut Flags) {
+fn inr(pc: &mut u16, register: &mut u8, flags: &mut Flags) {
     *register += 1;
     *pc += 1;
 
     handle_condition_codes(*register, flags);
 }
 
+fn dcx(pc: &mut u16, higher_register: &mut u8, lower_register: &mut u8) {
+    let mut registerPair = get16bit(*higher_register, *lower_register);
+    registerPair -= 1;
+    *lower_register = get_lower8(registerPair);
+    *higher_register = get_higher8(registerPair);
+    *pc += 1;
+}
+
+fn dcx_sp(pc: &mut u16, sp: &mut u16) {
+    *sp -= 1;
+    *pc += 1;
+}
+
+fn call(pc: &mut u16, sp: &mut u16, adr_low: u8, adr_high: u8) {
+    *sp = *pc;
+    *pc = get16bit(adr_low, adr_high);
+}
+
 fn emulate8080_op(state: &mut State8080) {
-    let code: u8 = state.memory[state.pc];
+    let code: u8 = state.get(state.pc);
     
     match code {
         0x00 => {}
         0x01 => {
             state.pc += 1;
-            state.c = state.memory[state.pc];
+            state.c = state.get(state.pc);
             state.pc += 1;
-            state.b = state.memory[state.pc];
+            state.b = state.get(state.pc);
         }
         0x02 => unimplemented!(),
         0x03 => unimplemented!(),
@@ -91,7 +127,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x08 => unimplemented!(),
         0x09 => unimplemented!(),
         0x0a => unimplemented!(),
-        0x0b => unimplemented!(),
+        0x0b => {
+            dcx(&mut state.pc, &mut state.b, &mut state.c);
+        }
         0x0c => {
             inr(&mut state.pc, &mut state.c, &mut state.flags);
         }
@@ -111,7 +149,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x18 => unimplemented!(),
         0x19 => unimplemented!(),
         0x1a => unimplemented!(),
-        0x1b => unimplemented!(),
+        0x1b => {
+            dcx(&mut state.pc, &mut state.d, &mut state.e);
+        }
         0x1c => {
             inr(&mut state.pc, &mut state.e, &mut state.flags);
         }
@@ -131,7 +171,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x28 => unimplemented!(),
         0x29 => unimplemented!(),
         0x2a => unimplemented!(),
-        0x2b => unimplemented!(),
+        0x2b => {
+            dcx(&mut state.pc, &mut state.h, &mut state.l);
+        }
         0x2c => {
             inr(&mut state.pc, &mut state.l, &mut state.flags);
         }
@@ -151,7 +193,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x38 => unimplemented!(),
         0x39 => unimplemented!(),
         0x3a => unimplemented!(),
-        0x3b => unimplemented!(),
+        0x3b => {
+            dcx_sp(&mut state.pc, &mut state.sp);
+        }
         0x3c => {
             inr(&mut state.pc, &mut state.a, &mut state.flags);
         }
@@ -291,9 +335,9 @@ fn emulate8080_op(state: &mut State8080) {
         0xc2 => unimplemented!(),
         0xc3 => {
             state.pc += 1;
-            let lower_byte = state.memory[state.pc];
+            let lower_byte = state.get(state.pc);
             state.pc += 1;
-            let higher_byte = state.memory[state.pc];
+            let higher_byte = state.get(state.pc);
             state.pc = get16bit(lower_byte, higher_byte);
         }
         0xc4 => unimplemented!(),
@@ -305,7 +349,13 @@ fn emulate8080_op(state: &mut State8080) {
         0xca => unimplemented!(),
         0xcb => unimplemented!(),
         0xcc => unimplemented!(),
-        0xcd => unimplemented!(),
+        0xcd => {
+            state.pc += 1;
+            let lower_byte = state.get(state.pc);
+            state.pc += 1;
+            let higher_byte = state.get(state.pc);
+            call(&mut state.pc, &mut state.sp, lower_byte, higher_byte);
+        }
         0xce => unimplemented!(),
         0xcf => unimplemented!(),
         0xd0 => unimplemented!(),
@@ -389,7 +439,7 @@ fn main() {
     let filename = "invaders.rom";
     state.memory = fs::read(filename).expect("Something wrong");
     
-    while state.pc < state.memory.len() {
+    while (state.pc as usize) < state.memory.len() {
         disassembler::disassemble8080op(&state.memory, state.pc);
         emulate8080_op(&mut state);
         state.pc += 1;
