@@ -87,11 +87,39 @@ fn inr(pc: &mut u16, register: &mut u8, flags: &mut Flags) {
     handle_condition_codes(*register, flags);
 }
 
+fn inr_adr(pc: &mut u16, adress: u16, memory: &mut Vec<u8>, flags: &mut Flags) {
+    memory[adress as usize] += 1;
+    *pc += 1;
+
+    handle_condition_codes(memory[adress as usize], flags);
+}
+
+fn dcr(pc: &mut u16, register: &mut u8, flags: &mut Flags) {
+    *register -= 1;
+    *pc += 1;
+
+    handle_condition_codes(*register, flags);
+}
+
+
 fn dcx(pc: &mut u16, higher_register: &mut u8, lower_register: &mut u8) {
     let mut registerPair = get16bit(*higher_register, *lower_register);
     registerPair -= 1;
     *lower_register = get_lower8(registerPair);
     *higher_register = get_higher8(registerPair);
+    *pc += 1;
+}
+
+fn inx(pc: &mut u16, higher_register: &mut u8, lower_register: &mut u8) {
+    let mut registerPair = get16bit(*higher_register, *lower_register);
+    registerPair += 1;
+    *lower_register = get_lower8(registerPair);
+    *higher_register = get_higher8(registerPair);
+    *pc += 1;
+}
+
+fn inx_sp(pc: &mut u16, sp: &mut u16) {
+    *sp += 1;
     *pc += 1;
 }
 
@@ -103,6 +131,10 @@ fn dcx_sp(pc: &mut u16, sp: &mut u16) {
 fn call(pc: &mut u16, sp: &mut u16, adr_low: u8, adr_high: u8) {
     *sp = *pc;
     *pc = get16bit(adr_low, adr_high);
+}
+
+fn mov(target: &mut u8, source: &u8) {
+    *target = *source;
 }
 
 fn emulate8080_op(state: &mut State8080) {
@@ -121,7 +153,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x04 => {
             inr(&mut state.pc, &mut state.b, &mut state.flags);
         }
-        0x05 => unimplemented!(),
+        0x05 => {
+            dcr(&mut state.pc, &mut state.b, &mut state.flags);
+        },
         0x06 => unimplemented!(),
         0x07 => unimplemented!(),
         0x08 => unimplemented!(),
@@ -133,7 +167,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x0c => {
             inr(&mut state.pc, &mut state.c, &mut state.flags);
         }
-        0x0d => unimplemented!(),
+        0x0d => {
+            dcr(&mut state.pc, &mut state.c, &mut state.flags);
+        },
         0x0e => unimplemented!(),
         0x0f => unimplemented!(),
         0x10 => unimplemented!(),
@@ -143,7 +179,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x14 => {
             inr(&mut state.pc, &mut state.d, &mut state.flags);
         }
-        0x15 => unimplemented!(),
+        0x15 => {
+            dcr(&mut state.pc, &mut state.d, &mut state.flags);
+        },
         0x16 => unimplemented!(),
         0x17 => unimplemented!(),
         0x18 => unimplemented!(),
@@ -155,17 +193,23 @@ fn emulate8080_op(state: &mut State8080) {
         0x1c => {
             inr(&mut state.pc, &mut state.e, &mut state.flags);
         }
-        0x1d => unimplemented!(),
+        0x1d => {
+            dcr(&mut state.pc, &mut state.e, &mut state.flags);
+        },
         0x1e => unimplemented!(),
         0x1f => unimplemented!(),
-        0x20 => unimplemented!(),
+        0x20 => {},
         0x21 => unimplemented!(),
         0x22 => unimplemented!(),
-        0x23 => unimplemented!(),
+        0x23 => {
+            inx(&mut state.pc, &mut state.h, &mut state.l);
+        },
         0x24 => {
             inr(&mut state.pc, &mut state.h, &mut state.flags);
         }
-        0x25 => unimplemented!(),
+        0x25 => {
+            dcr(&mut state.pc, &mut state.h, &mut state.flags);
+        },
         0x26 => unimplemented!(),
         0x27 => unimplemented!(),
         0x28 => unimplemented!(),
@@ -177,7 +221,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x2c => {
             inr(&mut state.pc, &mut state.l, &mut state.flags);
         }
-        0x2d => unimplemented!(),
+        0x2d => {
+            dcr(&mut state.pc, &mut state.l, &mut state.flags);
+        },
         0x2e => unimplemented!(),
         0x2f => unimplemented!(),
         0x30 => unimplemented!(),
@@ -185,9 +231,12 @@ fn emulate8080_op(state: &mut State8080) {
         0x32 => unimplemented!(),
         0x33 => unimplemented!(),
         0x34 => {
-            inr(&mut state.pc, &mut state.m, &mut state.flags);
+            let hl = get16bit(state.l, state.h);
+            inr_adr(&mut state.pc, hl, &mut state.memory, &mut state.flags);
         }
-        0x35 => unimplemented!(),
+        0x35 => {
+            dcr(&mut state.pc, &mut state.m, &mut state.flags);
+        },
         0x36 => unimplemented!(),
         0x37 => unimplemented!(),
         0x38 => unimplemented!(),
@@ -257,7 +306,7 @@ fn emulate8080_op(state: &mut State8080) {
         0x74 => unimplemented!(),
         0x75 => unimplemented!(),
         0x76 => unimplemented!(),
-        0x77 => unimplemented!(),
+        0x77 => mov(&mut state.m, &state.a),
         0x78 => unimplemented!(),
         0x79 => unimplemented!(),
         0x7a => unimplemented!(),
