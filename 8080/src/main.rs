@@ -10,6 +10,24 @@ struct Flags {
     pad: u8,
 }
 
+struct Memory {
+    memory: Vec<u8>
+}
+
+impl Memory {
+    fn get(&self, index: usize) -> u8 {
+        self.memory[index]
+    }
+
+    fn get_mut(&mut self, index: usize) -> &mut u8 {
+        &mut self.memory[index]
+    }
+
+    fn set(&mut self, index: usize, value: u8) {
+        self.memory[index] = value;
+    }
+}
+
 struct State8080 {
     a: u8,
     b: u8,
@@ -18,21 +36,28 @@ struct State8080 {
     e: u8,
     h: u8,
     l: u8,
-    m: u8,
     sp: u16,
     pc: u16,
-    memory: Vec<u8>,
+    memory: Memory,
     flags: Flags,
     int_enable: u8,
 }
 
 impl State8080 {
     fn get(&self, index: u16) -> u8 {
-        self.memory[index as usize]
+        self.memory.get(index as usize)
+    }
+
+    fn get_mut(&mut self, index: u16) -> &mut u8 {
+        self.memory.get_mut(index as usize)
     }
 
     fn set(&mut self, index: u16, value: u8) {
-        self.memory[index as usize] = value;
+        self.memory.set(index as usize, value);
+    }
+
+    fn get_hl(self) -> u16 {
+        get16bit(self.l, self.h)
     }
 }
 
@@ -87,20 +112,12 @@ fn inr(pc: &mut u16, register: &mut u8, flags: &mut Flags) {
     handle_condition_codes(*register, flags);
 }
 
-fn inr_adr(pc: &mut u16, adress: u16, memory: &mut Vec<u8>, flags: &mut Flags) {
-    memory[adress as usize] += 1;
-    *pc += 1;
-
-    handle_condition_codes(memory[adress as usize], flags);
-}
-
 fn dcr(pc: &mut u16, register: &mut u8, flags: &mut Flags) {
     *register -= 1;
     *pc += 1;
 
     handle_condition_codes(*register, flags);
 }
-
 
 fn dcx(pc: &mut u16, higher_register: &mut u8, lower_register: &mut u8) {
     let mut registerPair = get16bit(*higher_register, *lower_register);
@@ -133,13 +150,13 @@ fn call(pc: &mut u16, sp: &mut u16, adr_low: u8, adr_high: u8) {
     *pc = get16bit(adr_low, adr_high);
 }
 
-fn mov(target: &mut u8, source: &u8) {
-    *target = *source;
+fn mov(target: &mut u8, source: u8) {
+    *target = source;
 }
 
 fn emulate8080_op(state: &mut State8080) {
     let code: u8 = state.get(state.pc);
-    
+
     match code {
         0x00 => {}
         0x01 => {
@@ -232,10 +249,13 @@ fn emulate8080_op(state: &mut State8080) {
         0x33 => unimplemented!(),
         0x34 => {
             let hl = get16bit(state.l, state.h);
-            inr_adr(&mut state.pc, hl, &mut state.memory, &mut state.flags);
+            let register = state.memory.get_mut(hl as usize);
+            inr(&mut state.pc, register, &mut state.flags);
         }
         0x35 => {
-            dcr(&mut state.pc, &mut state.m, &mut state.flags);
+            let hl = get16bit(state.l, state.h);
+            let register = state.memory.get_mut(hl as usize);
+            dcr(&mut state.pc, register, &mut state.flags);
         },
         0x36 => unimplemented!(),
         0x37 => unimplemented!(),
@@ -306,7 +326,12 @@ fn emulate8080_op(state: &mut State8080) {
         0x74 => unimplemented!(),
         0x75 => unimplemented!(),
         0x76 => unimplemented!(),
-        0x77 => mov(&mut state.m, &state.a),
+        0x77 => {
+            let a = state.a.clone();
+            let hl = get16bit(state.l, state.h);
+            let register = state.get_mut(hl);
+            mov(register, a)
+        },
         0x78 => unimplemented!(),
         0x79 => unimplemented!(),
         0x7a => unimplemented!(),
@@ -477,19 +502,22 @@ fn main() {
         e: 0,
         h: 0,
         l: 0,
-        m: 0,
         sp: 0,
         pc: 0,
-        memory: Vec::new(),
+        memory: {
+            Memory {
+                memory: Vec::new()
+            }
+        },
         flags: flags,
         int_enable: 0,
     };
 
     let filename = "invaders.rom";
-    state.memory = fs::read(filename).expect("Something wrong");
+    state.memory.memory = fs::read(filename).expect("Something wrong");
     
-    while (state.pc as usize) < state.memory.len() {
-        disassembler::disassemble8080op(&state.memory, state.pc);
+    while (state.pc as usize) < state.memory.memory.len() {
+        disassembler::disassemble8080op(&state.memory.memory, state.pc);
         emulate8080_op(&mut state);
         state.pc += 1;
     }
