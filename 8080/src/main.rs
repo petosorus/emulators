@@ -245,7 +245,14 @@ fn emulate8080_op(state: &mut State8080) {
         0x2f => unimplemented!(),
         0x30 => unimplemented!(),
         0x31 => unimplemented!(),
-        0x32 => unimplemented!(),
+        0x32 => {
+            state.pc += 1;
+            let lower_byte = state.get(state.pc);
+            state.pc += 1;
+            let higher_byte = state.get(state.pc);
+            let adressed_memory = state.memory.get_mut(get16bit(lower_byte, higher_byte) as usize);
+            mov(adressed_memory, state.a)
+        }
         0x33 => unimplemented!(),
         0x34 => {
             let hl = get16bit(state.l, state.h);
@@ -301,10 +308,16 @@ fn emulate8080_op(state: &mut State8080) {
         0x5b => unimplemented!(),
         0x5c => unimplemented!(),
         0x5d => unimplemented!(),
-        0x5e => unimplemented!(),
+        0x5e => {
+            let hl = get16bit(state.l, state.h);
+            let value = state.memory.get(hl as usize);
+            mov(&mut state.e, value)
+        }
         0x5f => unimplemented!(),
         0x60 => unimplemented!(),
-        0x61 => unimplemented!(),
+        0x61 => {
+            mov(&mut state.h, state.c)
+        }
         0x62 => unimplemented!(),
         0x63 => unimplemented!(),
         0x64 => unimplemented!(),
@@ -318,7 +331,7 @@ fn emulate8080_op(state: &mut State8080) {
         0x6c => unimplemented!(),
         0x6d => unimplemented!(),
         0x6e => unimplemented!(),
-        0x6f => unimplemented!(),
+        0x6f => mov(&mut state.l, state.a),
         0x70 => unimplemented!(),
         0x71 => unimplemented!(),
         0x72 => unimplemented!(),
@@ -506,7 +519,7 @@ fn main() {
         pc: 0,
         memory: {
             Memory {
-                memory: Vec::new()
+                memory: vec![0; u16::max_value() as usize]
             }
         },
         flags: flags,
@@ -514,7 +527,11 @@ fn main() {
     };
 
     let filename = "invaders.rom";
-    state.memory.memory = fs::read(filename).expect("Something wrong");
+    let filecontent = fs::read(filename).expect("Something wrong");
+
+    for (index, data) in filecontent.iter().enumerate() {
+        state.memory.memory[index] = *data;
+    }
     
     while (state.pc as usize) < state.memory.memory.len() {
         disassembler::disassemble8080op(&state.memory.memory, state.pc);
