@@ -145,9 +145,27 @@ fn dcx_sp(pc: &mut u16, sp: &mut u16) {
     *pc += 1;
 }
 
-fn call(pc: &mut u16, sp: &mut u16, adr_low: u8, adr_high: u8) {
-    *sp = *pc;
+fn call(pc: &mut u16, sp: &mut u16, memory: &mut Memory, adr_low: u8, adr_high: u8) {
+    // Store on stack
+    *sp -= 1;
+    *(memory.get_mut(*sp as usize)) = get_higher8(*pc);
+    *sp -= 1;
+    *(memory.get_mut(*sp as usize)) = get_lower8(*pc);
+
+    // Move to function
     *pc = get16bit(adr_low, adr_high);
+}
+
+fn ret(pc: &mut u16, sp: &mut u16, memory: &Memory) {
+    // Get from stack
+    let adr_low = memory.get(*sp as usize);
+    *sp += 1;
+    let adr_high = memory.get(*sp as usize);
+    *sp += 1;
+    let adr = get16bit(adr_low, adr_high);
+
+    // Go back to call instruction
+    *pc = adr;
 }
 
 fn mov(target: &mut u8, source: u8) {
@@ -160,10 +178,9 @@ fn emulate8080_op(state: &mut State8080) {
     match code {
         0x00 => {}
         0x01 => {
-            state.pc += 1;
-            state.c = state.get(state.pc);
-            state.pc += 1;
-            state.b = state.get(state.pc);
+            state.c = state.get(state.pc + 1);
+            state.b = state.get(state.pc + 2);
+            state.pc += 2;
         }
         0x02 => unimplemented!(),
         0x03 => unimplemented!(),
@@ -246,12 +263,11 @@ fn emulate8080_op(state: &mut State8080) {
         0x30 => unimplemented!(),
         0x31 => unimplemented!(),
         0x32 => {
-            state.pc += 1;
-            let lower_byte = state.get(state.pc);
-            state.pc += 1;
-            let higher_byte = state.get(state.pc);
+            let lower_byte = state.get(state.pc + 1);
+            let higher_byte = state.get(state.pc + 2);
             let adressed_memory = state.memory.get_mut(get16bit(lower_byte, higher_byte) as usize);
-            mov(adressed_memory, state.a)
+            mov(adressed_memory, state.a);
+            state.pc += 2;
         }
         0x33 => unimplemented!(),
         0x34 => {
@@ -421,10 +437,8 @@ fn emulate8080_op(state: &mut State8080) {
         0xc1 => unimplemented!(),
         0xc2 => unimplemented!(),
         0xc3 => {
-            state.pc += 1;
-            let lower_byte = state.get(state.pc);
-            state.pc += 1;
-            let higher_byte = state.get(state.pc);
+            let lower_byte = state.get(state.pc + 1);
+            let higher_byte = state.get(state.pc + 2);
             state.pc = get16bit(lower_byte, higher_byte);
         }
         0xc4 => unimplemented!(),
@@ -432,16 +446,17 @@ fn emulate8080_op(state: &mut State8080) {
         0xc6 => unimplemented!(),
         0xc7 => unimplemented!(),
         0xc8 => unimplemented!(),
-        0xc9 => unimplemented!(),
+        0xc9 => {
+            ret(&mut state.pc, &mut state.sp, &state.memory);
+        }
         0xca => unimplemented!(),
         0xcb => unimplemented!(),
         0xcc => unimplemented!(),
         0xcd => {
-            state.pc += 1;
-            let lower_byte = state.get(state.pc);
-            state.pc += 1;
-            let higher_byte = state.get(state.pc);
-            call(&mut state.pc, &mut state.sp, lower_byte, higher_byte);
+            let lower_byte = state.get(state.pc + 1);
+            let higher_byte = state.get(state.pc + 2);
+            call(&mut state.pc, &mut state.sp, &mut state.memory, lower_byte, higher_byte);
+            state.pc += 2;
         }
         0xce => unimplemented!(),
         0xcf => unimplemented!(),
@@ -519,7 +534,7 @@ fn main() {
         pc: 0,
         memory: {
             Memory {
-                memory: vec![0; u16::max_value() as usize]
+                memory: vec![0; (u16::max_value() as usize) + 1]
             }
         },
         flags: flags,
@@ -534,10 +549,9 @@ fn main() {
     }
     
     while (state.pc as usize) < state.memory.memory.len() {
+        print!("pc {:04x} - ", state.pc);
         disassembler::disassemble8080op(&state.memory.memory, state.pc);
         emulate8080_op(&mut state);
         state.pc += 1;
     }
-
-    println!("b {}, c {}, pc {}", state.b, state.c, state.pc);
 }
