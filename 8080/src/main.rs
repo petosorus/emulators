@@ -440,6 +440,7 @@ fn emulate8080_op(state: &mut State8080) {
             let lower_byte = state.get(state.pc + 1);
             let higher_byte = state.get(state.pc + 2);
             state.pc = get16bit(lower_byte, higher_byte);
+            state.pc -= 1;
         }
         0xc4 => unimplemented!(),
         0xc5 => unimplemented!(),
