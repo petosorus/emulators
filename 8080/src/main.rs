@@ -172,6 +172,15 @@ fn mov(target: &mut u8, source: u8) {
     *target = source;
 }
 
+fn lxi(target_left: &mut u8, target_right: &mut u8, low: u8, high: u8) {
+    mov(target_left, high);
+    mov(target_right, low);
+}
+
+fn lxi_sp(sp: &mut u16, low: u8, high: u8) {
+    *sp = get16bit(low, high);
+}
+
 fn emulate8080_op(state: &mut State8080) {
     let code: u8 = state.get(state.pc);
 
@@ -261,7 +270,12 @@ fn emulate8080_op(state: &mut State8080) {
         0x2e => unimplemented!(),
         0x2f => unimplemented!(),
         0x30 => unimplemented!(),
-        0x31 => unimplemented!(),
+        0x31 => {
+            let low = state.get(state.pc + 1);
+            let high = state.get(state.pc + 2);
+            lxi_sp(&mut state.sp, low, high);
+            state.pc += 2;
+        }
         0x32 => {
             let lower_byte = state.get(state.pc + 1);
             let higher_byte = state.get(state.pc + 2);
@@ -550,7 +564,7 @@ fn main() {
     }
     
     while (state.pc as usize) < state.memory.memory.len() {
-        print!("pc {:04x} - ", state.pc);
+        print!("${:04x} - ", state.pc);
         disassembler::disassemble8080op(&state.memory.memory, state.pc);
         emulate8080_op(&mut state);
         state.pc += 1;
