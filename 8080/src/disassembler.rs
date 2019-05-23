@@ -8,7 +8,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         0x00 => println!("{:02x}: NOP", code),
         0x01 => {
             println!(
-                "{:02x}: LXI\tB,#${:02x}{:02x}",
+                "{:02x}: LXI\tB,${:02x}{:02x}",
                 code,
                 codebuffer[(pc as usize) + 2],
                 codebuffer[(pc as usize) + 1]
@@ -20,7 +20,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         0x04 => println!("{:02x}: INR\tB", code),
         0x05 => println!("{:02x}: DCR\tB", code),
         0x06 => {
-            println!("{:02x}: MVI\tB,#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: MVI\tB,${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0x07 => println!("{:02x}: RLC", code),
@@ -31,14 +31,14 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         0x0c => println!("{:02x}: INCR\tC", code),
         0x0d => println!("{:02x}: DCR\tC", code),
         0x0e => {
-            println!("{:02x}: MVI\tC,#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: MVI\tC,${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0x0f => println!("{:02x}: RRC", code),
         // 0x10
         0x11 => {
             println!(
-                "{:02x}: LXI\tD,#${:02x}{:02x}",
+                "{:02x}: LXI\tD,${:02x}{:02x}",
                 code,
                 codebuffer[(pc as usize) + 2],
                 codebuffer[(pc as usize) + 1]
@@ -50,7 +50,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         0x14 => println!("{:02x}: INR\tD", code),
         0x15 => println!("{:02x}: DCR\tD", code),
         0x16 => {
-            println!("{:02x}: MVI\tD,#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: MVI\tD,${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0x17 => println!("{:02x}: RAL", code),
@@ -61,14 +61,14 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         0x1c => println!("{:02x}: INR\tE", code),
         0x1d => println!("{:02x}: DCR\tE", code),
         0x1e => {
-            println!("{:02x}: MVI\tE,#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: MVI\tE,${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0x1f => println!("{:02x}: RAR", code),
         0x20 => println!("{:02x}: RIM", code),
         0x21 => {
             println!(
-                "{:02x}: LXI\tH,#${:02x}{:02x}",
+                "{:02x}: LXI\tH,${:02x}{:02x}",
                 code,
                 codebuffer[(pc as usize) + 2],
                 codebuffer[(pc as usize) + 1]
@@ -88,7 +88,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         0x24 => println!("{:02x}: INR\tH", code),
         0x25 => println!("{:02x}: DCR\tH", code),
         0x26 => {
-            println!("{:02x}: MVI\tH,#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: MVI\tH,${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0x27 => println!("{:02x}: DAA", code),
@@ -107,14 +107,14 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         0x2c => println!("{:02x}: INR\tL", code),
         0x2d => println!("{:02x}: DCR\tL", code),
         0x2e => {
-            println!("{:02x}: MVI\tL,#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: MVI\tL,${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0x2f => println!("{:02x}: CMA", code),
         0x30 => println!("{:02x}: SIM", code),
         0x31 => {
             println!(
-                "{:02x}: LXI\tSP\t#${:02x}{:02x}",
+                "{:02x}: LXI\tSP\t${:02x}{:02x}",
                 code,
                 codebuffer[(pc as usize) + 2],
                 codebuffer[(pc as usize) + 1]
@@ -129,7 +129,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         0x34 => println!("{:02x}: INR\tM", code),
         0x35 => println!("{:02x}: DCR\tM", code),
         0x36 => {
-            println!("{:02x}: MVI\tM,#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: MVI\tM,${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0x37 => println!("{:02x}: STC", code),
@@ -143,7 +143,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         0x3c => println!("{:02x}: INR\tA", code),
         0x3d => println!("{:02x}: DCR\tA", code),
         0x3e => {
-            println!("{:02x}: MVI\tA,#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: MVI\tA,${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0x3f => println!("{:02x}: CMC", code),
@@ -291,7 +291,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         }
         0xc5 => println!("{:02x}: PUSH\tB", code),
         0xc6 => {
-            println!("{:02x}: ADI\t#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: ADI\t${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0xc7 => println!("{:02x}: RST\t0", code),
@@ -317,7 +317,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         }
         0xce => {
             println!(
-                "{:02x}: ACI\t#${:02x}{:02x}",
+                "{:02x}: ACI\t${:02x}{:02x}",
                 code,
                 codebuffer[(pc as usize) + 2],
                 codebuffer[(pc as usize) + 1]
@@ -332,17 +332,17 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
             opbytes = 3;
         }
         0xd3 => {
-            println!("{:02x}: OUT\t#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: OUT\t${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0xd4 => {
-            println!("{:02x}: ADI\t#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: ADI\t${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0xd5 => println!("{:02x}: PUSH\tD", code),
         0xd6 => {
             println!(
-                "{:02x}: CNC\t#${:02x}{:02x}",
+                "{:02x}: CNC\t${:02x}{:02x}",
                 code,
                 codebuffer[(pc as usize) + 2],
                 codebuffer[(pc as usize) + 1]
@@ -357,7 +357,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
             opbytes = 3;
         }
         0xdb => {
-            println!("{:02x}: IN\t#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: IN\t${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0xdc => {
@@ -366,7 +366,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         }
         // 0xdd
         0xde => {
-            println!("{:02x}: SBI\t#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: SBI\t${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0xdf => println!("{:02x}: RST\t3", code),
@@ -383,7 +383,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         }
         0xe5 => println!("{:02x}: PUSH\tH", code),
         0xe6 => {
-            println!("{:02x}: ANI\t#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: ANI\t${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0xe7 => println!("{:02x}: RST\t4", code),
@@ -400,7 +400,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         }
         // 0xed
         0xee => {
-            println!("{:02x}: XPI\t#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: XPI\t${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0xef => println!("{:02x}: RST\t5", code),
@@ -417,7 +417,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         }
         0xf5 => println!("{:02x}: PUSH\tPSW", code),
         0xf6 => {
-            println!("{:02x}: ORI\t#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: ORI\t${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0xf7 => println!("{:02x}: RST\t6", code),
@@ -434,7 +434,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         }
         // 0xfd
         0xfe => {
-            println!("{:02x}: CPI\t#${:02x}", code,codebuffer[(pc as usize) + 1]);
+            println!("{:02x}: CPI\t${:02x}", code,codebuffer[(pc as usize) + 1]);
             opbytes = 2;
         }
         0xff => println!("{:02x}: RST\t7", code),
