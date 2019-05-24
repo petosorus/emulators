@@ -56,7 +56,7 @@ impl State8080 {
         self.memory.set(index as usize, value);
     }
 
-    fn get_hl(self) -> u16 {
+    fn get_hl(&self) -> u16 {
         get16bit(self.l, self.h)
     }
 }
@@ -186,10 +186,41 @@ fn ani(register: &mut u8, data: u8, flags: &mut Flags) {
     flags.cy = false;
 }
 
+fn dad(target_left: &mut u8, target_right: &mut u8, source: u16, flags: &mut Flags) {
+    let mut target = get16bit(*target_right, *target_left);
+    let targetcheck = target.clone();
+
+    target += source;
+    *target_left = get_higher8(target);
+    *target_right = get_lower8(target);
+
+    if target < targetcheck {
+        flags.cy = true;
+    }
+}
+
+fn xchg(state: &mut State8080) {
+    let htemp = state.h;
+    state.h = state.d;
+    state.d = htemp;
+
+    let ltemp = state.l;
+    state.l = state.e;
+    state.e = ltemp;
+}
+
 fn push(sp: &mut u16, memory: &mut Memory, left: u8, right: u8) {
     *memory.get_mut((*sp - 1) as usize) = right;
     *memory.get_mut((*sp - 2) as usize) = left; 
     *sp -= 2;
+}
+
+fn pop(sp: &mut u16, memory: &Memory, left: &mut u8, right: &mut u8) {
+    *right = memory.get((*sp) as usize);
+    *left = memory.get((*sp + 1) as usize);
+
+    memory.get((*sp) as usize);
+    *sp += 2;
 }
 
 fn emulate8080_op(state: &mut State8080) {
@@ -216,7 +247,10 @@ fn emulate8080_op(state: &mut State8080) {
         }
         0x07 => unimplemented!(),
         0x08 => unimplemented!(),
-        0x09 => unimplemented!(),
+        0x09 => {
+            let bc = get16bit(state.b, state.c);
+            dad(&mut state.h, &mut state.l, bc, &mut state.flags);
+        }
         0x0a => {
             ldax(&mut state.a, &state.memory, state.b, state.c);
         }
@@ -254,7 +288,10 @@ fn emulate8080_op(state: &mut State8080) {
         }
         0x17 => unimplemented!(),
         0x18 => unimplemented!(),
-        0x19 => unimplemented!(),
+        0x19 =>  {
+            let de = get16bit(state.d, state.e);
+            dad(&mut state.h, &mut state.l, de, &mut state.flags);
+        }
         0x1a => {
             ldax(&mut state.a, &state.memory, state.d, state.e);
         }
@@ -294,7 +331,10 @@ fn emulate8080_op(state: &mut State8080) {
         }
         0x27 => unimplemented!(),
         0x28 => unimplemented!(),
-        0x29 => unimplemented!(),
+        0x29 => {
+            let hl = state.get_hl();
+            dad(&mut state.h, &mut state.l, hl, &mut state.flags);
+        }
         0x2a => unimplemented!(),
         0x2b => {
             dcx(&mut state.pc, &mut state.h, &mut state.l);
@@ -338,7 +378,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x36 => unimplemented!(),
         0x37 => unimplemented!(),
         0x38 => unimplemented!(),
-        0x39 => unimplemented!(),
+        0x39 => {
+            dad(&mut state.h, &mut state.l, state.sp, &mut state.flags);
+        }
         0x3a => unimplemented!(),
         0x3b => {
             dcx_sp(&mut state.pc, &mut state.sp);
@@ -492,7 +534,9 @@ fn emulate8080_op(state: &mut State8080) {
         0xbe => unimplemented!(),
         0xbf => unimplemented!(),
         0xc0 => unimplemented!(),
-        0xc1 => unimplemented!(),
+        0xc1 => {
+            pop(&mut state.sp, &state.memory, &mut state.b, &mut state.c);
+        }
         0xc2 => unimplemented!(),
         0xc3 => {
             let lower_byte = state.get(state.pc + 1);
@@ -522,7 +566,9 @@ fn emulate8080_op(state: &mut State8080) {
         0xce => unimplemented!(),
         0xcf => unimplemented!(),
         0xd0 => unimplemented!(),
-        0xd1 => unimplemented!(),
+        0xd1 => {
+            pop(&mut state.sp, &state.memory, &mut state.d, &mut state.e);
+        }
         0xd2 => unimplemented!(),
         0xd3 => unimplemented!(),
         0xd4 => unimplemented!(),
@@ -540,7 +586,9 @@ fn emulate8080_op(state: &mut State8080) {
         0xde => unimplemented!(),
         0xdf => unimplemented!(),
         0xe0 => unimplemented!(),
-        0xe1 => unimplemented!(),
+        0xe1 => {
+            pop(&mut state.sp, &state.memory, &mut state.h, &mut state.l);
+        }
         0xe2 => unimplemented!(),
         0xe3 => unimplemented!(),
         0xe4 => {
@@ -563,7 +611,9 @@ fn emulate8080_op(state: &mut State8080) {
         0xe8 => unimplemented!(),
         0xe9 => unimplemented!(),
         0xea => unimplemented!(),
-        0xeb => unimplemented!(),
+        0xeb => {
+            xchg(state);
+        }
         0xec => unimplemented!(),
         0xed => unimplemented!(),
         0xee => unimplemented!(),
