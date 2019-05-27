@@ -128,10 +128,10 @@ fn dcx(pc: &mut u16, higher_register: &mut u8, lower_register: &mut u8) {
 }
 
 fn inx(pc: &mut u16, higher_register: &mut u8, lower_register: &mut u8) {
-    let mut registerPair = get16bit(*higher_register, *lower_register);
-    registerPair += 1;
-    *lower_register = get_lower8(registerPair);
-    *higher_register = get_higher8(registerPair);
+    let mut register_pair = get16bit(*higher_register, *lower_register);
+    register_pair += 1;
+    *lower_register = get_lower8(register_pair);
+    *higher_register = get_higher8(register_pair);
     *pc += 1;
 }
 
@@ -234,7 +234,9 @@ fn emulate8080_op(state: &mut State8080) {
             state.pc += 2;
         }
         0x02 => unimplemented!(),
-        0x03 => unimplemented!(),
+        0x03 => {
+            inx(&mut state.pc, &mut state.b, &mut state.c);
+        }
         0x04 => {
             inr(&mut state.pc, &mut state.b, &mut state.flags);
         }
@@ -275,7 +277,9 @@ fn emulate8080_op(state: &mut State8080) {
             state.pc += 2;
         }
         0x12 => unimplemented!(),
-        0x13 => unimplemented!(),
+        0x13 => {
+            inx(&mut state.pc, &mut state.d, &mut state.e)
+        }
         0x14 => {
             inr(&mut state.pc, &mut state.d, &mut state.flags);
         }
@@ -394,81 +398,232 @@ fn emulate8080_op(state: &mut State8080) {
             state.pc += 1;
         }
         0x3f => unimplemented!(),
-        0x40 => unimplemented!(),
-        0x41 => unimplemented!(),
-        0x42 => unimplemented!(),
-        0x43 => unimplemented!(),
-        0x44 => unimplemented!(),
-        0x45 => unimplemented!(),
-        0x46 => unimplemented!(),
-        0x47 => unimplemented!(),
-        0x48 => unimplemented!(),
-        0x49 => unimplemented!(),
-        0x4a => unimplemented!(),
-        0x4b => unimplemented!(),
-        0x4c => unimplemented!(),
-        0x4d => unimplemented!(),
-        0x4e => unimplemented!(),
-        0x4f => unimplemented!(),
-        0x50 => unimplemented!(),
-        0x51 => unimplemented!(),
-        0x52 => unimplemented!(),
-        0x53 => unimplemented!(),
-        0x54 => unimplemented!(),
-        0x55 => unimplemented!(),
-        0x56 => unimplemented!(),
-        0x57 => unimplemented!(),
-        0x58 => unimplemented!(),
-        0x59 => unimplemented!(),
-        0x5a => unimplemented!(),
-        0x5b => unimplemented!(),
-        0x5c => unimplemented!(),
-        0x5d => unimplemented!(),
+        0x40 => {
+            let b = state.b;
+            mov(&mut state.b, b);
+        }
+        0x41 => {
+            mov(&mut state.b, state.c);
+        }
+        0x42 => {
+            mov(&mut state.b, state.d);
+        }
+        0x43 => {             
+            mov(&mut state.b, state.e);
+        }
+        0x44 => {
+            mov(&mut state.b, state.h);
+        }
+        0x45 => {
+            mov(&mut state.b, state.l);
+        }
+        0x46 => {
+            // hl
+            mov(&mut state.b, state.d);
+        }
+        0x47 => {
+			mov(&mut state.b, state.a);
+		}
+        0x48 => {
+			mov(&mut state.c, state.b);
+		}
+        0x49 => {
+            let c = state.c;
+			mov(&mut state.c, c);
+		}
+        0x4a => {
+			mov(&mut state.c, state.d);
+		}
+        0x4b => {
+			mov(&mut state.c, state.e);
+		}
+        0x4c => {
+			mov(&mut state.c, state.h);
+		}
+        0x4d => {
+			mov(&mut state.c, state.l);
+		}
+        0x4e => {
+            // hl
+			mov(&mut state.c, state.l);
+		}
+        0x4f => {
+			mov(&mut state.c, state.a);
+		}
+        0x50 => {
+			mov(&mut state.d, state.b);
+		}
+        0x51 => {
+			mov(&mut state.d, state.c);
+		}
+        0x52 => {
+            let d = state.d;
+			mov(&mut state.d, d);
+		}
+        0x53 => {
+			mov(&mut state.d, state.e);
+		}
+        0x54 => {
+			mov(&mut state.d, state.h);
+		}
+        0x55 => {
+			mov(&mut state.d, state.l);
+		}
+        0x56 => {
+            // hl
+			mov(&mut state.d, state.l);
+		}
+        0x57 => {
+			mov(&mut state.d, state.a);
+		}
+        0x58 => {
+			mov(&mut state.e, state.b);
+		}
+        0x59 => {
+			mov(&mut state.e, state.c);
+		}
+        0x5a => {
+			mov(&mut state.e, state.d);
+		}
+        0x5b => {
+            let e = state.e;
+			mov(&mut state.e, e);
+		}
+        0x5c => {
+			mov(&mut state.e, state.h);
+		}
+        0x5d => {
+			mov(&mut state.e, state.l);
+		}
         0x5e => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
             mov(&mut state.e, value)
         }
-        0x5f => unimplemented!(),
-        0x60 => unimplemented!(),
+        0x5f => {
+			mov(&mut state.e, state.a);
+		}
+        0x60 => {
+			mov(&mut state.h, state.b);
+		}
         0x61 => {
             mov(&mut state.h, state.c)
         }
-        0x62 => unimplemented!(),
-        0x63 => unimplemented!(),
-        0x64 => unimplemented!(),
-        0x65 => unimplemented!(),
-        0x66 => unimplemented!(),
-        0x67 => unimplemented!(),
-        0x68 => unimplemented!(),
-        0x69 => unimplemented!(),
-        0x6a => unimplemented!(),
-        0x6b => unimplemented!(),
-        0x6c => unimplemented!(),
-        0x6d => unimplemented!(),
-        0x6e => unimplemented!(),
-        0x6f => mov(&mut state.l, state.a),
-        0x70 => unimplemented!(),
-        0x71 => unimplemented!(),
-        0x72 => unimplemented!(),
-        0x73 => unimplemented!(),
-        0x74 => unimplemented!(),
-        0x75 => unimplemented!(),
+        0x62 => {
+			mov(&mut state.h, state.d);
+		}
+        0x63 => {
+			mov(&mut state.h, state.e);
+		}
+        0x64 => {
+            let h = state.h;
+			mov(&mut state.h, h);
+		}
+        0x65 => {
+			mov(&mut state.h, state.l);
+		}
+        0x66 => {
+            // hl
+			mov(&mut state.h, state.a);
+		}
+        0x67 => {
+			mov(&mut state.h, state.a);
+		}
+        0x68 => {
+			mov(&mut state.l, state.b);
+		}
+        0x69 => {
+			mov(&mut state.l, state.c);
+		}
+        0x6a => {
+			mov(&mut state.l, state.d);
+		}
+        0x6b => {
+			mov(&mut state.l, state.e);
+		}
+        0x6c => {
+			mov(&mut state.l, state.h);
+		}
+        0x6d => {
+            let l = state.l;
+			mov(&mut state.l, l);
+		}
+        0x6e => {
+            // hl
+			mov(&mut state.l, state.d);
+		}
+        0x6f => {
+            mov(&mut state.l, state.a)
+        },
+        0x70 => {
+			let b = state.b;
+			let hl = get16bit(state.l, state.h);
+			let register = state.get_mut(hl);
+			mov(register, b)
+		}
+        0x71 => {
+			let c = state.c;
+			let hl = get16bit(state.l, state.h);
+			let register = state.get_mut(hl);
+			mov(register, c)
+		}
+        0x72 => {
+			let d = state.d;
+			let hl = get16bit(state.l, state.h);
+			let register = state.get_mut(hl);
+			mov(register, d)
+		}
+        0x73 => {
+			let e = state.e;
+			let hl = get16bit(state.l, state.h);
+			let register = state.get_mut(hl);
+			mov(register, e)
+		}
+        0x74 => {
+			let h = state.h;
+			let hl = get16bit(state.l, state.h);
+			let register = state.get_mut(hl);
+			mov(register, h)
+		}
+        0x75 => {
+			let l = state.l;
+			let hl = get16bit(state.l, state.h);
+			let register = state.get_mut(hl);
+			mov(register, l)
+		}
         0x76 => unimplemented!(),
         0x77 => {
-            let a = state.a.clone();
+            let a = state.a;
             let hl = get16bit(state.l, state.h);
             let register = state.get_mut(hl);
             mov(register, a)
         },
-        0x78 => unimplemented!(),
-        0x79 => unimplemented!(),
-        0x7a => unimplemented!(),
-        0x7b => unimplemented!(),
-        0x7c => unimplemented!(),
-        0x7d => unimplemented!(),
-        0x7e => unimplemented!(),
-        0x7f => unimplemented!(),
+        0x78 => {
+			mov(&mut state.a, state.b);
+		}
+        0x79 => {
+			mov(&mut state.a, state.c);
+		}
+        0x7a => {
+			mov(&mut state.a, state.d);
+		}
+        0x7b => {
+			mov(&mut state.a, state.e);
+		}
+        0x7c => {
+			mov(&mut state.a, state.h);
+		}
+        0x7d => {
+			mov(&mut state.a, state.l);
+		}
+        0x7e => {
+            // hl
+			mov(&mut state.a, state.d);
+		}
+        0x7f => {
+            let a = state.a;
+			mov(&mut state.a, a);
+		}
         0x80 => unimplemented!(),
         0x81 => unimplemented!(),
         0x82 => unimplemented!(),
@@ -570,7 +725,10 @@ fn emulate8080_op(state: &mut State8080) {
             pop(&mut state.sp, &state.memory, &mut state.d, &mut state.e);
         }
         0xd2 => unimplemented!(),
-        0xd3 => unimplemented!(),
+        0xd3 => {
+            // TODO out
+            state.pc += 1;
+        }
         0xd4 => unimplemented!(),
         0xd5 => {
             push(&mut state.sp, &mut state.memory, state.d, state.e);
