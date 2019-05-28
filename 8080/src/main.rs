@@ -223,6 +223,29 @@ fn pop(sp: &mut u16, memory: &Memory, left: &mut u8, right: &mut u8) {
     *sp += 2;
 }
 
+fn rar(register: &mut u8, flags: &mut Flags) {
+    let carry = flags.cy;
+    flags.cy = *register % 2 == 0;
+
+    if carry {
+        *register = *register | 0x80;
+    } else {
+        *register = *register & 0x7f;
+    }
+}
+
+fn ori(register: &mut u8, data: u8, flags: &mut Flags) {
+    flags.cy = false;
+
+    *register = *register | data;
+
+    handle_condition_codes(*register, flags);
+}
+
+fn cma(register: &mut u8) {
+    *register = !*register;
+}
+
 fn emulate8080_op(state: &mut State8080) {
     let code: u8 = state.get(state.pc);
 
@@ -312,7 +335,9 @@ fn emulate8080_op(state: &mut State8080) {
             state.e = state.get(state.pc + 1);
             state.pc += 1;
         }
-        0x1f => unimplemented!(),
+        0x1f => {
+            rar(&mut state.a, &mut state.flags);
+        }
         0x20 => {},
         0x21 => {
             state.l = state.get(state.pc + 1);
@@ -353,7 +378,9 @@ fn emulate8080_op(state: &mut State8080) {
             state.l = state.get(state.pc + 1);
             state.pc += 1;
         }
-        0x2f => unimplemented!(),
+        0x2f => {
+            cma(&mut state.a);
+        }
         0x30 => unimplemented!(),
         0x31 => {
             let low = state.get(state.pc + 1);
@@ -418,8 +445,9 @@ fn emulate8080_op(state: &mut State8080) {
             mov(&mut state.b, state.l);
         }
         0x46 => {
-            // hl
-            mov(&mut state.b, state.d);
+            let hl = get16bit(state.l, state.h);
+            let value = state.memory.get(hl as usize);
+            mov(&mut state.b, value)
         }
         0x47 => {
 			mov(&mut state.b, state.a);
@@ -444,8 +472,9 @@ fn emulate8080_op(state: &mut State8080) {
 			mov(&mut state.c, state.l);
 		}
         0x4e => {
-            // hl
-			mov(&mut state.c, state.l);
+            let hl = get16bit(state.l, state.h);
+            let value = state.memory.get(hl as usize);
+            mov(&mut state.c, value)
 		}
         0x4f => {
 			mov(&mut state.c, state.a);
@@ -470,8 +499,9 @@ fn emulate8080_op(state: &mut State8080) {
 			mov(&mut state.d, state.l);
 		}
         0x56 => {
-            // hl
-			mov(&mut state.d, state.l);
+            let hl = get16bit(state.l, state.h);
+            let value = state.memory.get(hl as usize);
+            mov(&mut state.d, value)
 		}
         0x57 => {
 			mov(&mut state.d, state.a);
@@ -523,8 +553,9 @@ fn emulate8080_op(state: &mut State8080) {
 			mov(&mut state.h, state.l);
 		}
         0x66 => {
-            // hl
-			mov(&mut state.h, state.a);
+            let hl = get16bit(state.l, state.h);
+            let value = state.memory.get(hl as usize);
+            mov(&mut state.h, value);
 		}
         0x67 => {
 			mov(&mut state.h, state.a);
@@ -549,8 +580,9 @@ fn emulate8080_op(state: &mut State8080) {
 			mov(&mut state.l, l);
 		}
         0x6e => {
-            // hl
-			mov(&mut state.l, state.d);
+            let hl = get16bit(state.l, state.h);
+            let value = state.memory.get(hl as usize);
+            mov(&mut state.d, value);
 		}
         0x6f => {
             mov(&mut state.l, state.a)
@@ -617,8 +649,9 @@ fn emulate8080_op(state: &mut State8080) {
 			mov(&mut state.a, state.l);
 		}
         0x7e => {
-            // hl
-			mov(&mut state.a, state.d);
+            let hl = get16bit(state.l, state.h);
+            let value = state.memory.get(hl as usize);
+            mov(&mut state.a, value);
 		}
         0x7f => {
             let a = state.a;
@@ -738,7 +771,10 @@ fn emulate8080_op(state: &mut State8080) {
         0xd8 => unimplemented!(),
         0xd9 => unimplemented!(),
         0xda => unimplemented!(),
-        0xdb => unimplemented!(),
+        0xdb => {
+            // TODO in
+            state.pc += 1;
+        }
         0xdc => unimplemented!(),
         0xdd => unimplemented!(),
         0xde => unimplemented!(),
@@ -782,7 +818,11 @@ fn emulate8080_op(state: &mut State8080) {
         0xf3 => unimplemented!(),
         0xf4 => unimplemented!(),
         0xf5 => unimplemented!(),
-        0xf6 => unimplemented!(),
+        0xf6 => {
+            let data = state.get(state.pc + 1);
+            ori(&mut state.a, data, &mut state.flags);
+            state.pc += 1;
+        }
         0xf7 => unimplemented!(),
         0xf8 => unimplemented!(),
         0xf9 => unimplemented!(),
