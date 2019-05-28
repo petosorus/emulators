@@ -11,7 +11,7 @@ struct Flags {
 }
 
 struct Memory {
-    memory: Vec<u8>
+    memory: Vec<u8>,
 }
 
 impl Memory {
@@ -62,7 +62,7 @@ impl State8080 {
 }
 
 fn get16bit(lower_byte: u8, higher_byte: u8) -> u16 {
-    let result: u16 = (higher_byte as u16) << 8 | ( lower_byte as u16);
+    let result: u16 = (higher_byte as u16) << 8 | (lower_byte as u16);
     result
 }
 
@@ -92,12 +92,11 @@ fn sign(value: u8, flags: &mut Flags) {
 
 fn parity(value: u8, flags: &mut Flags) {
     let mut bits: u8 = 0;
-        for i in 0..8 {
-            bits += (value >> i) & 1;
-        }
+    for i in 0..8 {
+        bits += (value >> i) & 1;
+    }
     flags.p = (bits & 1) == 0;
 }
-
 
 fn handle_condition_codes(value: u8, flags: &mut Flags) {
     zero(value, flags);
@@ -211,7 +210,7 @@ fn xchg(state: &mut State8080) {
 
 fn push(sp: &mut u16, memory: &mut Memory, left: u8, right: u8) {
     *memory.get_mut((*sp - 1) as usize) = right;
-    *memory.get_mut((*sp - 2) as usize) = left; 
+    *memory.get_mut((*sp - 2) as usize) = left;
     *sp -= 2;
 }
 
@@ -265,7 +264,7 @@ fn emulate8080_op(state: &mut State8080) {
         }
         0x05 => {
             dcr(&mut state.pc, &mut state.b, &mut state.flags);
-        },
+        }
         0x06 => {
             state.b = state.get(state.pc + 1);
             state.pc += 1;
@@ -287,7 +286,7 @@ fn emulate8080_op(state: &mut State8080) {
         }
         0x0d => {
             dcr(&mut state.pc, &mut state.c, &mut state.flags);
-        },
+        }
         0x0e => {
             state.c = state.get(state.pc + 1);
             state.pc += 1;
@@ -300,22 +299,20 @@ fn emulate8080_op(state: &mut State8080) {
             state.pc += 2;
         }
         0x12 => unimplemented!(),
-        0x13 => {
-            inx(&mut state.pc, &mut state.d, &mut state.e)
-        }
+        0x13 => inx(&mut state.pc, &mut state.d, &mut state.e),
         0x14 => {
             inr(&mut state.pc, &mut state.d, &mut state.flags);
         }
         0x15 => {
             dcr(&mut state.pc, &mut state.d, &mut state.flags);
-        },
+        }
         0x16 => {
             state.d = state.get(state.pc + 1);
             state.pc += 1;
         }
         0x17 => unimplemented!(),
         0x18 => unimplemented!(),
-        0x19 =>  {
+        0x19 => {
             let de = get16bit(state.d, state.e);
             dad(&mut state.h, &mut state.l, de, &mut state.flags);
         }
@@ -330,7 +327,7 @@ fn emulate8080_op(state: &mut State8080) {
         }
         0x1d => {
             dcr(&mut state.pc, &mut state.e, &mut state.flags);
-        },
+        }
         0x1e => {
             state.e = state.get(state.pc + 1);
             state.pc += 1;
@@ -338,7 +335,7 @@ fn emulate8080_op(state: &mut State8080) {
         0x1f => {
             rar(&mut state.a, &mut state.flags);
         }
-        0x20 => {},
+        0x20 => {}
         0x21 => {
             state.l = state.get(state.pc + 1);
             state.h = state.get(state.pc + 2);
@@ -347,13 +344,13 @@ fn emulate8080_op(state: &mut State8080) {
         0x22 => unimplemented!(),
         0x23 => {
             inx(&mut state.pc, &mut state.h, &mut state.l);
-        },
+        }
         0x24 => {
             inr(&mut state.pc, &mut state.h, &mut state.flags);
         }
         0x25 => {
             dcr(&mut state.pc, &mut state.h, &mut state.flags);
-        },
+        }
         0x26 => {
             state.h = state.get(state.pc + 1);
             state.pc += 1;
@@ -373,7 +370,7 @@ fn emulate8080_op(state: &mut State8080) {
         }
         0x2d => {
             dcr(&mut state.pc, &mut state.l, &mut state.flags);
-        },
+        }
         0x2e => {
             state.l = state.get(state.pc + 1);
             state.pc += 1;
@@ -391,7 +388,9 @@ fn emulate8080_op(state: &mut State8080) {
         0x32 => {
             let lower_byte = state.get(state.pc + 1);
             let higher_byte = state.get(state.pc + 2);
-            let adressed_memory = state.memory.get_mut(get16bit(lower_byte, higher_byte) as usize);
+            let adressed_memory = state
+                .memory
+                .get_mut(get16bit(lower_byte, higher_byte) as usize);
             mov(adressed_memory, state.a);
             state.pc += 2;
         }
@@ -405,7 +404,7 @@ fn emulate8080_op(state: &mut State8080) {
             let hl = get16bit(state.l, state.h);
             let register = state.memory.get_mut(hl as usize);
             dcr(&mut state.pc, register, &mut state.flags);
-        },
+        }
         0x36 => unimplemented!(),
         0x37 => unimplemented!(),
         0x38 => unimplemented!(),
@@ -435,7 +434,7 @@ fn emulate8080_op(state: &mut State8080) {
         0x42 => {
             mov(&mut state.b, state.d);
         }
-        0x43 => {             
+        0x43 => {
             mov(&mut state.b, state.e);
         }
         0x44 => {
@@ -450,213 +449,209 @@ fn emulate8080_op(state: &mut State8080) {
             mov(&mut state.b, value)
         }
         0x47 => {
-			mov(&mut state.b, state.a);
-		}
+            mov(&mut state.b, state.a);
+        }
         0x48 => {
-			mov(&mut state.c, state.b);
-		}
+            mov(&mut state.c, state.b);
+        }
         0x49 => {
             let c = state.c;
-			mov(&mut state.c, c);
-		}
+            mov(&mut state.c, c);
+        }
         0x4a => {
-			mov(&mut state.c, state.d);
-		}
+            mov(&mut state.c, state.d);
+        }
         0x4b => {
-			mov(&mut state.c, state.e);
-		}
+            mov(&mut state.c, state.e);
+        }
         0x4c => {
-			mov(&mut state.c, state.h);
-		}
+            mov(&mut state.c, state.h);
+        }
         0x4d => {
-			mov(&mut state.c, state.l);
-		}
+            mov(&mut state.c, state.l);
+        }
         0x4e => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
             mov(&mut state.c, value)
-		}
+        }
         0x4f => {
-			mov(&mut state.c, state.a);
-		}
+            mov(&mut state.c, state.a);
+        }
         0x50 => {
-			mov(&mut state.d, state.b);
-		}
+            mov(&mut state.d, state.b);
+        }
         0x51 => {
-			mov(&mut state.d, state.c);
-		}
+            mov(&mut state.d, state.c);
+        }
         0x52 => {
             let d = state.d;
-			mov(&mut state.d, d);
-		}
+            mov(&mut state.d, d);
+        }
         0x53 => {
-			mov(&mut state.d, state.e);
-		}
+            mov(&mut state.d, state.e);
+        }
         0x54 => {
-			mov(&mut state.d, state.h);
-		}
+            mov(&mut state.d, state.h);
+        }
         0x55 => {
-			mov(&mut state.d, state.l);
-		}
+            mov(&mut state.d, state.l);
+        }
         0x56 => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
             mov(&mut state.d, value)
-		}
+        }
         0x57 => {
-			mov(&mut state.d, state.a);
-		}
+            mov(&mut state.d, state.a);
+        }
         0x58 => {
-			mov(&mut state.e, state.b);
-		}
+            mov(&mut state.e, state.b);
+        }
         0x59 => {
-			mov(&mut state.e, state.c);
-		}
+            mov(&mut state.e, state.c);
+        }
         0x5a => {
-			mov(&mut state.e, state.d);
-		}
+            mov(&mut state.e, state.d);
+        }
         0x5b => {
             let e = state.e;
-			mov(&mut state.e, e);
-		}
+            mov(&mut state.e, e);
+        }
         0x5c => {
-			mov(&mut state.e, state.h);
-		}
+            mov(&mut state.e, state.h);
+        }
         0x5d => {
-			mov(&mut state.e, state.l);
-		}
+            mov(&mut state.e, state.l);
+        }
         0x5e => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
             mov(&mut state.e, value)
         }
         0x5f => {
-			mov(&mut state.e, state.a);
-		}
-        0x60 => {
-			mov(&mut state.h, state.b);
-		}
-        0x61 => {
-            mov(&mut state.h, state.c)
+            mov(&mut state.e, state.a);
         }
+        0x60 => {
+            mov(&mut state.h, state.b);
+        }
+        0x61 => mov(&mut state.h, state.c),
         0x62 => {
-			mov(&mut state.h, state.d);
-		}
+            mov(&mut state.h, state.d);
+        }
         0x63 => {
-			mov(&mut state.h, state.e);
-		}
+            mov(&mut state.h, state.e);
+        }
         0x64 => {
             let h = state.h;
-			mov(&mut state.h, h);
-		}
+            mov(&mut state.h, h);
+        }
         0x65 => {
-			mov(&mut state.h, state.l);
-		}
+            mov(&mut state.h, state.l);
+        }
         0x66 => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
             mov(&mut state.h, value);
-		}
+        }
         0x67 => {
-			mov(&mut state.h, state.a);
-		}
+            mov(&mut state.h, state.a);
+        }
         0x68 => {
-			mov(&mut state.l, state.b);
-		}
+            mov(&mut state.l, state.b);
+        }
         0x69 => {
-			mov(&mut state.l, state.c);
-		}
+            mov(&mut state.l, state.c);
+        }
         0x6a => {
-			mov(&mut state.l, state.d);
-		}
+            mov(&mut state.l, state.d);
+        }
         0x6b => {
-			mov(&mut state.l, state.e);
-		}
+            mov(&mut state.l, state.e);
+        }
         0x6c => {
-			mov(&mut state.l, state.h);
-		}
+            mov(&mut state.l, state.h);
+        }
         0x6d => {
             let l = state.l;
-			mov(&mut state.l, l);
-		}
+            mov(&mut state.l, l);
+        }
         0x6e => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
             mov(&mut state.d, value);
-		}
-        0x6f => {
-            mov(&mut state.l, state.a)
-        },
+        }
+        0x6f => mov(&mut state.l, state.a),
         0x70 => {
-			let b = state.b;
-			let hl = get16bit(state.l, state.h);
-			let register = state.get_mut(hl);
-			mov(register, b)
-		}
+            let b = state.b;
+            let hl = get16bit(state.l, state.h);
+            let register = state.get_mut(hl);
+            mov(register, b)
+        }
         0x71 => {
-			let c = state.c;
-			let hl = get16bit(state.l, state.h);
-			let register = state.get_mut(hl);
-			mov(register, c)
-		}
+            let c = state.c;
+            let hl = get16bit(state.l, state.h);
+            let register = state.get_mut(hl);
+            mov(register, c)
+        }
         0x72 => {
-			let d = state.d;
-			let hl = get16bit(state.l, state.h);
-			let register = state.get_mut(hl);
-			mov(register, d)
-		}
+            let d = state.d;
+            let hl = get16bit(state.l, state.h);
+            let register = state.get_mut(hl);
+            mov(register, d)
+        }
         0x73 => {
-			let e = state.e;
-			let hl = get16bit(state.l, state.h);
-			let register = state.get_mut(hl);
-			mov(register, e)
-		}
+            let e = state.e;
+            let hl = get16bit(state.l, state.h);
+            let register = state.get_mut(hl);
+            mov(register, e)
+        }
         0x74 => {
-			let h = state.h;
-			let hl = get16bit(state.l, state.h);
-			let register = state.get_mut(hl);
-			mov(register, h)
-		}
+            let h = state.h;
+            let hl = get16bit(state.l, state.h);
+            let register = state.get_mut(hl);
+            mov(register, h)
+        }
         0x75 => {
-			let l = state.l;
-			let hl = get16bit(state.l, state.h);
-			let register = state.get_mut(hl);
-			mov(register, l)
-		}
+            let l = state.l;
+            let hl = get16bit(state.l, state.h);
+            let register = state.get_mut(hl);
+            mov(register, l)
+        }
         0x76 => unimplemented!(),
         0x77 => {
             let a = state.a;
             let hl = get16bit(state.l, state.h);
             let register = state.get_mut(hl);
             mov(register, a)
-        },
+        }
         0x78 => {
-			mov(&mut state.a, state.b);
-		}
+            mov(&mut state.a, state.b);
+        }
         0x79 => {
-			mov(&mut state.a, state.c);
-		}
+            mov(&mut state.a, state.c);
+        }
         0x7a => {
-			mov(&mut state.a, state.d);
-		}
+            mov(&mut state.a, state.d);
+        }
         0x7b => {
-			mov(&mut state.a, state.e);
-		}
+            mov(&mut state.a, state.e);
+        }
         0x7c => {
-			mov(&mut state.a, state.h);
-		}
+            mov(&mut state.a, state.h);
+        }
         0x7d => {
-			mov(&mut state.a, state.l);
-		}
+            mov(&mut state.a, state.l);
+        }
         0x7e => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
             mov(&mut state.a, value);
-		}
+        }
         0x7f => {
             let a = state.a;
-			mov(&mut state.a, a);
-		}
+            mov(&mut state.a, a);
+        }
         0x80 => unimplemented!(),
         0x81 => unimplemented!(),
         0x82 => unimplemented!(),
@@ -748,7 +743,13 @@ fn emulate8080_op(state: &mut State8080) {
         0xcd => {
             let lower_byte = state.get(state.pc + 1);
             let higher_byte = state.get(state.pc + 2);
-            call(&mut state.pc, &mut state.sp, &mut state.memory, lower_byte, higher_byte);
+            call(
+                &mut state.pc,
+                &mut state.sp,
+                &mut state.memory,
+                lower_byte,
+                higher_byte,
+            );
             state.pc += 2;
         }
         0xce => unimplemented!(),
@@ -831,12 +832,11 @@ fn emulate8080_op(state: &mut State8080) {
         0xfc => unimplemented!(),
         0xfd => unimplemented!(),
         0xfe => unimplemented!(),
-        0xff => unimplemented!()
+        0xff => unimplemented!(),
     }
 }
 
 fn main() {
-
     let flags = Flags {
         z: false,
         s: false,
@@ -858,7 +858,7 @@ fn main() {
         pc: 0,
         memory: {
             Memory {
-                memory: vec![0; (u16::max_value() as usize) + 1]
+                memory: vec![0; (u16::max_value() as usize) + 1],
             }
         },
         flags: flags,
@@ -871,7 +871,7 @@ fn main() {
     for (index, data) in filecontent.iter().enumerate() {
         state.memory.memory[index] = *data;
     }
-    
+
     while (state.pc as usize) < state.memory.memory.len() {
         print!("${:04x} - ", state.sp);
         print!("${:04x} - ", state.pc);
