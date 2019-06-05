@@ -571,7 +571,11 @@ fn main() {
     let rom: Vec<u8> = fs::read(filename).expect("Something	wrong");
     let mut pc: u16 = 0;
 
+    let mut i = 0;
+
     while (pc as usize) < rom.len() {
+        print!("{:04x}:\t", i);
+        i += 1;
         pc += disassemble8080op(&rom, pc);
     }
 }
