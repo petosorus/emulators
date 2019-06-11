@@ -168,8 +168,23 @@ fn lxi_sp(sp: &mut u16, low: u8, high: u8) {
     *sp = get16bit(low, high);
 }
 
-fn lda_ldax(register: &mut u8, memory: &Memory, adr_high: u8, adr_low: u8) {
-    *register = memory.get(get16bit(adr_low, adr_high) as usize);
+fn load(register: &mut u8, memory: &Memory, adr_high: u8, adr_low: u8) {
+    let adr = get16bit(adr_low, adr_high);
+    load_adr(register, memory, adr);
+}
+
+fn load_adr(register: &mut u8, memory: &Memory, adr: u16) {
+    *register = memory.get(adr as usize);
+}
+
+fn add(target: &mut u8, source: u8, flags: &mut Flags) {
+    let old_value = *target;
+    *target = *target + source;
+
+    handle_condition_codes(*target, flags);
+    if *target < old_value {
+        flags.cy = true;
+    }
 }
 
 fn ani(register: &mut u8, data: u8, flags: &mut Flags) {
@@ -219,10 +234,23 @@ fn rar(register: &mut u8, flags: &mut Flags) {
     let carry = flags.cy;
     flags.cy = *register % 2 == 0;
 
+    *register = *register >> 1;
+
     if carry {
         *register = *register | 0x80;
     } else {
         *register = *register & 0x7f;
+    }
+}
+
+fn rlc(register: &mut u8, flags: &mut Flags) {
+    let msb = *register | 0x80;
+    *register = *register << 1;
+
+    if msb == 0 {
+        flags.cy = false;
+    } else {
+        flags.cy = true;
     }
 }
 
@@ -290,14 +318,16 @@ fn emulate8080_op(state: &mut State8080) {
             mov(&mut state.b, source);
             state.pc += 1;
         }
-        0x07 => unimplemented!(),
+        0x07 => {
+            rlc(&mut state.a, &mut state.flags);
+        }
         0x08 => unimplemented!(),
         0x09 => {
             let bc = get16bit(state.b, state.c);
             dad(&mut state.h, &mut state.l, bc, &mut state.flags);
         }
         0x0a => {
-            lda_ldax(&mut state.a, &state.memory, state.b, state.c);
+            load(&mut state.a, &state.memory, state.b, state.c);
         }
         0x0b => {
             dcx(&mut state.b, &mut state.c);
@@ -342,7 +372,7 @@ fn emulate8080_op(state: &mut State8080) {
             dad(&mut state.h, &mut state.l, de, &mut state.flags);
         }
         0x1a => {
-            lda_ldax(&mut state.a, &state.memory, state.d, state.e);
+            load(&mut state.a, &state.memory, state.d, state.e);
         }
         0x1b => {
             dcx(&mut state.d, &mut state.e);
@@ -388,7 +418,14 @@ fn emulate8080_op(state: &mut State8080) {
             let hl = state.get_hl();
             dad(&mut state.h, &mut state.l, hl, &mut state.flags);
         }
-        0x2a => unimplemented!(),
+        0x2a => {
+            let high = state.get(state.pc + 1);
+            let low = state.get(state.pc + 2);
+            let adr = get16bit(low, high);
+            
+            load_adr(&mut state.l, &state.memory, adr);
+            load_adr(&mut state.h, &state.memory, adr + 1);
+        }
         0x2b => {
             dcx(&mut state.h, &mut state.l);
         }
@@ -449,7 +486,7 @@ fn emulate8080_op(state: &mut State8080) {
             let low = state.get(state.pc + 1);
             let high = state.get(state.pc + 2);
             state.pc += 2;
-            lda_ldax(&mut state.a, &state.memory, high, low);
+            load(&mut state.a, &state.memory, high, low);
         },
         0x3b => {
             dcx_sp(&mut state.sp);
@@ -691,14 +728,33 @@ fn emulate8080_op(state: &mut State8080) {
             let a = state.a;
             mov(&mut state.a, a);
         }
-        0x80 => unimplemented!(),
-        0x81 => unimplemented!(),
-        0x82 => unimplemented!(),
-        0x83 => unimplemented!(),
-        0x84 => unimplemented!(),
-        0x85 => unimplemented!(),
-        0x86 => unimplemented!(),
-        0x87 => unimplemented!(),
+        0x80 => {
+            add(&mut state.a, state.b, &mut state.flags);
+        }
+        0x81 => {
+            add(&mut state.a, state.c, &mut state.flags);
+        }
+        0x82 => {
+            add(&mut state.a, state.d, &mut state.flags);
+        }
+        0x83 => {
+            add(&mut state.a, state.e, &mut state.flags);
+        }
+        0x84 => {
+            add(&mut state.a, state.h, &mut state.flags);
+        }
+        0x85 => {
+            add(&mut state.a, state.l, &mut state.flags);
+        }
+        0x86 => {
+            let hl = state.get_hl();
+            let register = state.get(hl);
+            add(&mut state.a, register, &mut state.flags);
+        }
+        0x87 => {
+            let a = state.a;
+            add(&mut state.a, a, &mut state.flags);
+        }
         0x88 => unimplemented!(),
         0x89 => unimplemented!(),
         0x8a => unimplemented!(),
@@ -816,7 +872,15 @@ fn emulate8080_op(state: &mut State8080) {
             state.pc = get16bit(lower_byte, higher_byte);
             state.pc -= 1;
         }
-        0xc4 => unimplemented!(),
+        0xc4 => {
+            if !state.flags.z {
+                let high = state.get(state.pc + 1);
+                let low = state.get(state.pc + 1);
+                call(&mut state.pc, &mut state.sp, &mut state.memory, low, high);
+            } else {
+                state.pc += 2
+            }
+        }
         0xc5 => {
             push(&mut state.sp, &mut state.memory, state.b, state.c);
         }
@@ -902,7 +966,16 @@ fn emulate8080_op(state: &mut State8080) {
         0xe7 => unimplemented!(),
         0xe8 => unimplemented!(),
         0xe9 => unimplemented!(),
-        0xea => unimplemented!(),
+        0xea => {
+            if state.flags.p {
+                let lower_byte = state.get(state.pc + 1);
+                let higher_byte = state.get(state.pc + 2);
+                state.pc = get16bit(lower_byte, higher_byte);
+                state.pc -= 1;
+            } else {
+                state.pc += 2;
+            }
+        }
         0xeb => {
             xchg(state);
         }
@@ -932,7 +1005,16 @@ fn emulate8080_op(state: &mut State8080) {
         0xf7 => unimplemented!(),
         0xf8 => unimplemented!(),
         0xf9 => unimplemented!(),
-        0xfa => unimplemented!(),
+        0xfa => {
+            if state.flags.s {
+                let high = state.get(state.pc + 1);
+                let low = state.get(state.pc + 2);
+                state.pc = get16bit(low, high);
+                state.pc -= 1;
+            } else {
+                state.pc += 2;
+            }
+        }
         0xfb => {
             // TODO enable interrupt
         }
