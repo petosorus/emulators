@@ -1,5 +1,6 @@
 use std::fs;
 mod disassembler;
+mod display;
 
 struct Flags {
     z: bool,
@@ -980,7 +981,7 @@ fn emulate8080_op(state: &mut State8080) {
             xchg(state);
         }
         0xec => {
-            unimplemented!();
+            // unimplemented!();
             let low = state.get(state.pc + 1);
             let high = state.get(state.pc + 2);
             state.pc += 2;
@@ -1022,6 +1023,7 @@ fn emulate8080_op(state: &mut State8080) {
         0xfd => unimplemented!(),
         0xfe => {
             cpi(state.a, state.get(state.pc + 1), &mut state.flags);
+            state.pc += 1;
         }
         0xff => unimplemented!(),
     }
@@ -1063,13 +1065,21 @@ fn main() {
         state.memory.memory[index] = *data;
     }
 
+    let mut video = display::memory_to_video(&state.memory.memory[0x2400..0x4000]);
+
+    let mut window = display::display_window(&mut video);
+
     while (state.pc as usize) < state.memory.memory.len() {
-        print!("${:04x} - ", state.sp);
-        print!("${:04x} - ", state.pc);
-        disassembler::disassemble8080op(&state.memory.memory, state.pc);
+        // print!("sp: ${:04x} - ", state.sp);
+        // print!("pc: ${:04x} - ", state.pc);
+        // disassembler::disassemble8080op(&state.memory.memory, state.pc);
         emulate8080_op(&mut state);
         state.pc += 1;
-        // print!("hl {:02x}\t", state.get(state.get_hl()));
-        // println!("{}, {}, {}", state.a, state.flags.z, state.pc);
+        // println!("${:04x}", state.get(0x3000));
+        // print!("hl {:04x}\t", state.get_hl());
+        // println!("{:02x}, {}", state.a, state.flags.z);
+
+        video = display::memory_to_video(&state.memory.memory[0x0000..state.memory.memory.len()]);
+        display::update_screen(&mut window, &mut video);
     }
 }
