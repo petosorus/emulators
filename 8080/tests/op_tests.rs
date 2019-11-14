@@ -177,7 +177,35 @@ let mut state = init_state();
 
     em8080::emulate8080_op(&mut state);
 
-    assert_eq!(state.a, 0b00000000);
+    assert_eq!(state.a, 0b00000001);
+    assert_eq!(state.pc, 0);
+    assert_eq!(state.sp, 0);
+    assert_eq!(state.flags.cy, true);
+}
+
+#[test]
+fn rrc() {
+let mut state = init_state();
+    state.set(0, 0x0f);
+    state.a = 0b01001000;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0b00100100);
+    assert_eq!(state.pc, 0);
+    assert_eq!(state.sp, 0);
+    assert_eq!(state.flags.cy, false);
+}
+
+#[test]
+fn rrc_carry() {
+let mut state = init_state();
+    state.set(0, 0x0f);
+    state.a = 0b00000001;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0b10000000);
     assert_eq!(state.pc, 0);
     assert_eq!(state.sp, 0);
     assert_eq!(state.flags.cy, true);
