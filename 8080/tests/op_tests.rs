@@ -184,6 +184,103 @@ let mut state = init_state();
 }
 
 #[test]
+fn dad_b() {
+    let mut state = init_state();
+    state.set(0, 0x09);
+    state.c = 0x0A;
+    state.b = 0x0F;
+    state.h = 0;
+    state.l = 0;
+
+    em8080::emulate8080_op(&mut state);
+
+    let hl = get16bit(state.l, state.h);
+    assert_eq!(0x0A0F, hl);
+}
+
+#[test]
+fn dad_b_carry() {
+    let mut state = init_state();
+    state.set(0, 0x09);
+    state.c = 0x0A;
+    state.b = 0x01;
+    state.h = 0;
+    state.l = 0xFF;
+
+    em8080::emulate8080_op(&mut state);
+
+    let hl = get16bit(state.l, state.h);
+    assert_eq!(0x0B00, hl);
+}
+
+#[test]
+fn dad_b_carry_to_0() {
+    let mut state = init_state();
+    state.set(0, 0x09);
+    state.c = 0xFF;
+    state.b = 0xFF;
+    state.h = 0;
+    state.l = 0x01;
+
+    em8080::emulate8080_op(&mut state);
+
+    let hl = get16bit(state.l, state.h);
+    assert_eq!(0x0000, hl);
+}
+
+#[test]
+fn ldax_b() {
+    let mut state = init_state();
+    state.set(0, 0x0a);
+    state.set(0x01, 0xFF);
+    state.c = 0x01;
+    state.b = 0x00;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(0xFF, state.a);
+}
+
+#[test]
+fn dcx_b() {
+    let mut state = init_state();
+    state.set(0, 0x0b);
+    state.c = 0x01;
+    state.b = 0x00;
+
+    em8080::emulate8080_op(&mut state);
+
+    let bc = get16bit(state.c, state.b);
+    assert_eq!(0x0000, bc);
+}
+
+#[test]
+fn dcx_b_carry() {
+    let mut state = init_state();
+    state.set(0, 0x0b);
+    state.c = 0x00;
+    state.b = 0xF0;
+
+    em8080::emulate8080_op(&mut state);
+
+    let bc = get16bit(state.c, state.b);
+    assert_eq!(0xEFFF, bc);
+}
+
+#[test]
+fn dcx_b_carry_to_ff() {
+    let mut state = init_state();
+    state.set(0, 0x0b);
+    state.c = 0x00;
+    state.b = 0x00;
+
+    em8080::emulate8080_op(&mut state);
+
+    let bc = get16bit(state.c, state.b);
+    assert_eq!(0xFFFF, bc);
+}
+
+#[test]
 fn rrc() {
 let mut state = init_state();
     state.set(0, 0x0f);
@@ -239,4 +336,9 @@ fn init_state() -> em8080::State8080 {
         flags: flags,
         int_enable: 0,
     }
+}
+
+fn get16bit(lower_byte: u8, higher_byte: u8) -> u16 {
+    let result: u16 = (higher_byte as u16) << 8 | (lower_byte as u16);
+    result
 }

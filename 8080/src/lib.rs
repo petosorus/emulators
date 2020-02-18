@@ -119,10 +119,10 @@ fn dcr(register: &mut u8, flags: &mut Flags) {
 }
 
 fn dcx(higher_register: &mut u8, lower_register: &mut u8) {
-    let mut registerPair = get16bit(*higher_register, *lower_register);
-    registerPair -= 1;
-    *lower_register = get_lower8(registerPair);
-    *higher_register = get_higher8(registerPair);
+    let mut register_pair = get16bit(*lower_register, *higher_register);
+    register_pair -= 1;
+    *lower_register = get_lower8(register_pair);
+    *higher_register = get_higher8(register_pair);
 }
 
 fn inx(higher_register: &mut u8, lower_register: &mut u8) {
