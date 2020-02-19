@@ -308,6 +308,87 @@ let mut state = init_state();
     assert_eq!(state.flags.cy, true);
 }
 
+#[test]
+fn rar() {
+let mut state = init_state();
+    state.set(0, 0x1f);
+    state.a = 0b01001000;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0b00100100);
+    assert_eq!(state.pc, 0);
+    assert_eq!(state.sp, 0);
+    assert_eq!(state.flags.cy, false);
+}
+
+#[test]
+fn rar_carry() {
+let mut state = init_state();
+    state.set(0, 0x1f);
+    state.a = 0b00000001;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0b00000000);
+    assert_eq!(state.pc, 0);
+    assert_eq!(state.sp, 0);
+    assert_eq!(state.flags.cy, true);
+}
+
+#[test]
+fn rar_from_carry() {
+let mut state = init_state();
+    state.set(0, 0x1f);
+    state.a = 0b00000000;
+    state.flags.cy = true;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0b10000000);
+    assert_eq!(state.pc, 0);
+    assert_eq!(state.sp, 0);
+    assert_eq!(state.flags.cy, false);
+}
+
+// unimplemented
+/*
+stax
+ral
+shld
+daa
+stc
+cmc
+hlt
+sub
+sbb
+ora
+adi
+rst
+rz
+cz
+aci
+rnc
+jnc
+cnc
+sui
+rc
+cc
+sbi
+rpo
+jpo
+xthl
+rpe
+pchl
+xri
+rp
+jp
+di
+rm
+sphl
+
+*/
+
 fn init_state() -> em8080::State8080 {
     let flags = em8080::Flags {
         z: false,
