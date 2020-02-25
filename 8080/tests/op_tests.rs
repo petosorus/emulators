@@ -351,6 +351,229 @@ let mut state = init_state();
     assert_eq!(state.flags.cy, false);
 }
 
+#[test]
+fn lhld() {
+let mut state = init_state();
+    state.set(0, 0x2a);
+    state.set(1, 0x00);
+    state.set(2, 0x03);
+    state.set(3, 0xDE);
+    state.set(4, 0xAD);
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.h, 0xAD);
+    assert_eq!(state.l, 0xDE);
+}
+
+#[test]
+fn cma() {
+let mut state = init_state();
+    state.set(0, 0x2f);
+    state.a = 0x00;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0xFF);
+}
+
+#[test]
+fn lda() {
+let mut state = init_state();
+    state.set(0, 0x3a);
+    state.set(1, 0x03);
+    state.set(2, 0x00);
+    state.set(3, 0xBB);
+    state.a = 0x00;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0xBB);
+}
+
+#[test]
+fn mov() {
+let mut state = init_state();
+    state.set(0, 0x41); // mov c to b
+    state.b = 0x00;
+    state.c = 0x26;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.b, 0x26);
+}
+
+#[test]
+fn add() {
+let mut state = init_state();
+    state.set(0, 0x80);
+    state.a = 0x00;
+    state.b = 0x02;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0x02);
+    assert_eq!(state.flags.z, false);
+    assert_eq!(state.flags.s, false);
+    assert_eq!(state.flags.p, false);
+    assert_eq!(state.flags.cy, false);
+    assert_eq!(state.flags.ac, false);
+}
+
+#[test]
+fn add_even_p() {
+let mut state = init_state();
+    state.set(0, 0x80);
+    state.a = 0x00;
+    state.b = 0x03;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0x03);
+    assert_eq!(state.flags.z, false);
+    assert_eq!(state.flags.s, false);
+    assert_eq!(state.flags.p, true);
+    assert_eq!(state.flags.cy, false);
+    assert_eq!(state.flags.ac, false);
+}
+
+#[test]
+fn add_zero() {
+    let mut state = init_state();
+    state.set(0, 0x80);
+    state.a = 0x00;
+    state.b = 0x00;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0x00);
+    assert_eq!(state.flags.z, true);
+    assert_eq!(state.flags.s, false);
+    assert_eq!(state.flags.p, true);
+    assert_eq!(state.flags.cy, false);
+    assert_eq!(state.flags.ac, false);
+}
+
+#[test]
+fn ana() {
+    let mut state = init_state();
+    state.set(0, 0xa0);
+    state.a = 0b00000011;
+    state.b = 0b00000110;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0b00000010);
+    assert_eq!(state.flags.z, false);
+    assert_eq!(state.flags.s, false);
+    assert_eq!(state.flags.p, false);
+    assert_eq!(state.flags.cy, false);
+    assert_eq!(state.flags.ac, false);
+}
+
+#[test]
+fn ana_sign_true() {
+    let mut state = init_state();
+    state.set(0, 0xa0);
+    state.a = 0xFF;
+    state.b = 0b10000110;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0b10000110);
+    assert_eq!(state.flags.z, false);
+    assert_eq!(state.flags.s, true);
+    assert_eq!(state.flags.p, false);
+    assert_eq!(state.flags.cy, false);
+    assert_eq!(state.flags.ac, false);
+}
+
+#[test]
+fn ana_even_p() {
+    let mut state = init_state();
+    state.set(0, 0xa0);
+    state.a = 0b00010011;
+    state.b = 0b00010110;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0b00010010);
+    assert_eq!(state.flags.z, false);
+    assert_eq!(state.flags.s, false);
+    assert_eq!(state.flags.p, true);
+    assert_eq!(state.flags.cy, false);
+    assert_eq!(state.flags.ac, false);
+}
+
+#[test]
+fn ana_zero() {
+    let mut state = init_state();
+    state.set(0, 0xa0);
+    state.a = 0xF0;
+    state.b = 0x0F;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0x00);
+    assert_eq!(state.flags.z, true);
+    assert_eq!(state.flags.s, false);
+    assert_eq!(state.flags.p, true);
+    assert_eq!(state.flags.cy, false);
+    assert_eq!(state.flags.ac, false);
+}
+
+#[test]
+fn xra_full() {
+    let mut state = init_state();
+    state.set(0, 0xa8);
+    state.a = 0xF0;
+    state.b = 0x0F;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0xFF);
+    assert_eq!(state.flags.z, false);
+    assert_eq!(state.flags.s, true);
+    assert_eq!(state.flags.p, true);
+    assert_eq!(state.flags.cy, false);
+    assert_eq!(state.flags.ac, false);
+}
+
+
+#[test]
+fn xra_even_p() {
+    let mut state = init_state();
+    state.set(0, 0xa8);
+    state.a = 0xFF;
+    state.b = 0x0E;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0xF1);
+    assert_eq!(state.flags.z, false);
+    assert_eq!(state.flags.s, true);
+    assert_eq!(state.flags.p, false);
+    assert_eq!(state.flags.cy, false);
+    assert_eq!(state.flags.ac, false);
+}
+
+#[test]
+fn xra_zero() {
+    let mut state = init_state();
+    state.set(0, 0xa8);
+    state.a = 0xFF;
+    state.b = 0xFF;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0x00);
+    assert_eq!(state.flags.z, true);
+    assert_eq!(state.flags.s, false);
+    assert_eq!(state.flags.p, true);
+    assert_eq!(state.flags.cy, false);
+    assert_eq!(state.flags.ac, false);
+}
+
 // unimplemented
 /*
 stax
