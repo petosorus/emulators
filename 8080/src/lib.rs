@@ -193,6 +193,7 @@ fn ani(register: &mut u8, data: u8, flags: &mut Flags) {
     *register = *register & data;
 
     flags.cy = false;
+    handle_condition_codes(*register, flags);
 }
 
 fn dad(target_left: &mut u8, target_right: &mut u8, source: u16, flags: &mut Flags) {
@@ -219,8 +220,8 @@ fn xchg(state: &mut State8080) {
 }
 
 fn push(sp: &mut u16, memory: &mut Memory, left: u8, right: u8) {
-    *memory.get_mut((*sp - 1) as usize) = right;
-    *memory.get_mut((*sp - 2) as usize) = left;
+    *memory.get_mut((*sp - 1) as usize) = left;
+    *memory.get_mut((*sp - 2) as usize) = right;
     *sp -= 2;
 }
 
@@ -442,8 +443,8 @@ pub fn emulate8080_op(state: &mut State8080) {
             dad(&mut state.h, &mut state.l, hl, &mut state.flags);
         }
         0x2a => {
-            let high = state.get(state.pc + 1);
-            let low = state.get(state.pc + 2);
+            let low = state.get(state.pc + 1);
+            let high = state.get(state.pc + 2);
             let adr = get16bit(low, high);
             
             load_adr(&mut state.l, &state.memory, adr);
@@ -902,8 +903,8 @@ pub fn emulate8080_op(state: &mut State8080) {
         }
         0xc4 => {
             if !state.flags.z {
-                let high = state.get(state.pc + 1);
-                let low = state.get(state.pc + 2);
+                let low = state.get(state.pc + 1);
+                let high = state.get(state.pc + 2);
                 call(&mut state.pc, &mut state.sp, &mut state.memory, low, high);
                 state.pc -= 1;
             } else {
@@ -991,6 +992,8 @@ pub fn emulate8080_op(state: &mut State8080) {
                 let high = state.get(state.pc + 2);
                 call(&mut state.pc, &mut state.sp, &mut state.memory, low, high);
                 state.pc -= 1;
+            } else {
+                state.pc += 2;
             }
         }
         0xe5 => {
@@ -1023,6 +1026,7 @@ pub fn emulate8080_op(state: &mut State8080) {
             state.pc += 2;
             if state.flags.p {
                 call(&mut state.pc, &mut state.sp, &mut state.memory, low, high);
+                state.pc -= 1;
             }
         }
         0xed => {}
@@ -1044,8 +1048,8 @@ pub fn emulate8080_op(state: &mut State8080) {
         0xf9 => unimplemented!(),
         0xfa => {
             if state.flags.s {
-                let high = state.get(state.pc + 1);
-                let low = state.get(state.pc + 2);
+                let low = state.get(state.pc + 1);
+                let high = state.get(state.pc + 2);
                 state.pc = get16bit(low, high);
                 state.pc -= 1;
             } else {
@@ -1057,9 +1061,10 @@ pub fn emulate8080_op(state: &mut State8080) {
         }
         0xfc => {
             if state.flags.s {
-                let high = state.get(state.pc + 1);
-                let low = state.get(state.pc + 2);
+                let low = state.get(state.pc + 1);
+                let high = state.get(state.pc + 2);
                 call(&mut state.pc, &mut state.sp, &mut state.memory, low, high);
+                state.pc -= 1;
             } else {
                 state.pc += 2;
             }
