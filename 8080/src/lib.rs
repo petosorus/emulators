@@ -312,6 +312,7 @@ fn cpi(register: u8, data: u8, flags: &mut Flags) {
 
 fn cmp(accumulator: u8, register: u8, flags: &mut Flags) {
     let result = accumulator - register;
+    flags.cy = register > accumulator;
     handle_condition_codes(result, flags);
 }
 
@@ -888,7 +889,9 @@ pub fn emulate8080_op(state: &mut State8080) {
                 let lower_byte = state.get(state.pc + 1);
                 let higher_byte = state.get(state.pc + 2);
                 state.pc = get16bit(lower_byte, higher_byte);
-                state.pc -= 1;    
+                state.pc -= 1;
+            } else {
+                state.pc += 2;
             }
         }
         0xc3 => {
@@ -900,8 +903,9 @@ pub fn emulate8080_op(state: &mut State8080) {
         0xc4 => {
             if !state.flags.z {
                 let high = state.get(state.pc + 1);
-                let low = state.get(state.pc + 1);
+                let low = state.get(state.pc + 2);
                 call(&mut state.pc, &mut state.sp, &mut state.memory, low, high);
+                state.pc -= 1;
             } else {
                 state.pc += 2
             }
