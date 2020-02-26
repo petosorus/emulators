@@ -3,8 +3,47 @@ pub struct Flags {
     pub s: bool,
     pub p: bool,
     pub cy: bool,
-    pub ac: bool,
-    pub pad: u8,
+    pub ac: bool
+}
+
+impl Flags {
+    pub fn save(&self) -> u8 {
+        let mut saved: u8 = 0;
+        if self.s {
+            saved |= 0x80;
+        }
+        if self.z {
+            saved |= 0x40;
+        }
+        if self.ac {
+            saved |= 0x10;
+        }
+        if self.p {
+            saved |= 0x04;
+        }
+        if self.cy {
+            saved |= 0x01;
+        }
+        saved
+    }
+
+    pub fn load(&mut self, saved: u8) {
+        if (saved & 0x80) != 0 {
+            self.s = true;
+        }
+        if (saved & 0x40) != 0 {
+            self.z = true;
+        }
+        if (saved & 0x10) != 0 {
+            self.ac = true;
+        }
+        if (saved & 0x04) != 0 {
+            self.p = true;
+        }
+        if (saved & 0x01) != 0 {
+            self.cy = true;
+        }
+    }
 }
 
 pub struct Memory {
@@ -914,7 +953,11 @@ pub fn emulate8080_op(state: &mut State8080) {
         0xc5 => {
             push(&mut state.sp, &mut state.memory, state.b, state.c);
         }
-        0xc6 => unimplemented!(),
+        0xc6 => {
+            let data = state.get(state.pc + 1);
+            add(&mut state.a, data, &mut state.flags);
+            state.pc += 1;
+        }
         0xc7 => unimplemented!(),
         0xc8 => unimplemented!(),
         0xc9 => {
@@ -950,10 +993,7 @@ pub fn emulate8080_op(state: &mut State8080) {
             pop(&mut state.sp, &state.memory, &mut state.d, &mut state.e);
         }
         0xd2 => unimplemented!(),
-        0xd3 => {
-            // TODO out
-            state.pc += 1;
-        }
+        0xd3 => state.pc += 1,
         0xd4 => unimplemented!(),
         0xd5 => {
             push(&mut state.sp, &mut state.memory, state.d, state.e);
@@ -972,10 +1012,7 @@ pub fn emulate8080_op(state: &mut State8080) {
                 state.pc += 2;
             }
         },
-        0xdb => {
-            // TODO in
-            state.pc += 1;
-        }
+        0xdb => unimplemented!(),
         0xdc => unimplemented!(),
         0xdd => {}
         0xde => unimplemented!(),
@@ -1033,11 +1070,18 @@ pub fn emulate8080_op(state: &mut State8080) {
         0xee => unimplemented!(),
         0xef => unimplemented!(),
         0xf0 => unimplemented!(),
-        0xf1 => unimplemented!(),
+        0xf1 => {
+            let mut flags = 0;
+            pop(&mut state.sp, &mut state.memory, &mut state.a, &mut flags);
+            state.flags.load(flags);
+        },
         0xf2 => unimplemented!(),
         0xf3 => unimplemented!(),
         0xf4 => unimplemented!(),
-        0xf5 => unimplemented!(),
+        0xf5 => {
+            let flags = state.flags.save();
+            push(&mut state.sp, &mut state.memory, state.a, flags);
+        }
         0xf6 => {
             let data = state.get(state.pc + 1);
             ori(&mut state.a, data, &mut state.flags);
@@ -1056,9 +1100,7 @@ pub fn emulate8080_op(state: &mut State8080) {
                 state.pc += 2;
             }
         }
-        0xfb => {
-            // TODO enable interrupt
-        }
+        0xfb => unimplemented!(),
         0xfc => {
             if state.flags.s {
                 let low = state.get(state.pc + 1);

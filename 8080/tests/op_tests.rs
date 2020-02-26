@@ -405,7 +405,7 @@ let mut state = init_state();
 
 #[test]
 fn add() {
-let mut state = init_state();
+    let mut state = init_state();
     state.set(0, 0x80);
     state.a = 0x00;
     state.b = 0x02;
@@ -725,6 +725,23 @@ fn cnz_zero() {
     // en anticipation de pc += 1 de main, on soustrait 1
     assert_eq!(state.pc, 0x02);
     assert_eq!(state.sp, 0);
+}
+
+#[test]
+fn adi() {
+    let mut state = init_state();
+    state.set(0, 0xc6);
+    state.set(1, 0xAF);
+    state.a = 0x00;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.a, 0xAF);
+    assert_eq!(state.flags.z, false);
+    assert_eq!(state.flags.s, true);
+    assert_eq!(state.flags.p, true);
+    assert_eq!(state.flags.cy, false);
+    assert_eq!(state.flags.ac, false);
 }
 
 #[test]
@@ -1184,10 +1201,41 @@ fn push_pop() {
 
     em8080::emulate8080_op(&mut state);
 
-
     assert_eq!(state.sp, 0);
     assert_eq!(state.d, 0xFF);
     assert_eq!(state.e, 0xEE);
+}
+
+#[test]
+fn push_pop_psw() {
+    let mut state = init_state();
+    state.set(0, 0xf5);
+    state.set(1, 0xf1);
+    state.flags.z = true;
+    state.flags.s = true;
+    state.flags.p = true;
+    state.flags.cy = true;
+    state.flags.ac = true;
+
+    em8080::emulate8080_op(&mut state);
+    state.pc += 1;
+
+    assert_eq!(state.sp, 0xFFFE);
+
+    state.flags.z = false;
+    state.flags.s = false;
+    state.flags.p = false;
+    state.flags.cy = false;
+    state.flags.ac = false;
+
+    em8080::emulate8080_op(&mut state);
+
+    assert_eq!(state.sp, 0);
+    assert_eq!(state.flags.z, true);
+    assert_eq!(state.flags.s, true);
+    assert_eq!(state.flags.p, true);
+    assert_eq!(state.flags.cy, true);
+    assert_eq!(state.flags.ac, true);
 }
 
 fn init_state() -> em8080::State8080 {
@@ -1196,8 +1244,7 @@ fn init_state() -> em8080::State8080 {
         s: false,
         p: false,
         cy: false,
-        ac: false,
-        pad: 0,
+        ac: false
     };
 
     em8080::State8080 {
