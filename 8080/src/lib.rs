@@ -76,7 +76,7 @@ pub struct State8080 {
     pub pc: u16,
     pub memory: Memory,
     pub flags: Flags,
-    pub int_enable: u8,
+    pub int_enable: bool,
 }
 
 impl State8080 {
@@ -1100,7 +1100,9 @@ pub fn emulate8080_op(state: &mut State8080) {
                 state.pc += 2;
             }
         }
-        0xfb => unimplemented!(),
+        0xfb => {
+            state.int_enable = true;
+        }
         0xfc => {
             if state.flags.s {
                 let low = state.get(state.pc + 1);

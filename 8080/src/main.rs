@@ -9,8 +9,7 @@ fn main() {
         s: false,
         p: false,
         cy: false,
-        ac: false,
-        pad: 0,
+        ac: false
     };
 
     let mut state = em8080::State8080 {
@@ -29,7 +28,7 @@ fn main() {
             }
         },
         flags: flags,
-        int_enable: 0,
+        int_enable: false,
     };
 
     let filename = "invaders.rom";
@@ -46,7 +45,7 @@ fn main() {
     while (state.pc as usize) < state.memory.memory.len() {
         // print!("sp: ${:04x} - ", state.sp);
         // print!("pc: ${:04x} - ", state.pc);
-        // disassembler::disassemble8080op(&state.memory.memory, state.pc);
+        disassembler::disassemble8080op(&state.memory.memory, state.pc);
         em8080::emulate8080_op(&mut state);
         state.pc += 1;
         // println!("${:04x}", state.get(0x3000));

@@ -1263,7 +1263,7 @@ fn init_state() -> em8080::State8080 {
             }
         },
         flags: flags,
-        int_enable: 0,
+        int_enable: false,
     }
 }
 
