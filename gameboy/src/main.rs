@@ -33,8 +33,8 @@ fn main() {
         int_enable: false,
     };
 
-    //let filename = "cpudiag.bin";
-    let filename = "invaders.rom";
+    let filename = "cpudiag.bin";
+    // let filename = "invaders.rom";
     let filecontent = fs::read(filename).expect("Something wrong");
 
     for (index, data) in filecontent.iter().enumerate() {
@@ -58,6 +58,10 @@ fn main() {
         // print!("hl {:04x}\t", state.get_hl());
         // println!("{:02x}, {}", state.a, state.flags.z);
 
+        // Game boy VRAM
+        // video = display::memory_to_video(&state.memory.memory[0x8000..0x9FFF]);
+
+        // Just for fun
         video = display::memory_to_video(&state.memory.memory[0x0000..state.memory.memory.len()]);
         display::update_screen(&mut window, &mut video);
 
