@@ -277,14 +277,14 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         0x95 => println!("{:02x}: SUB\tL", code),
         0x96 => println!("{:02x}: SUB\tM", code),
         0x97 => println!("{:02x}: SUB\tA", code),
-        0x98 => println!("{:02x}: SBB\tB", code),
-        0x99 => println!("{:02x}: SBB\tC", code),
-        0x9a => println!("{:02x}: SBB\tD", code),
-        0x9b => println!("{:02x}: SBB\tE", code),
-        0x9c => println!("{:02x}: SBB\tH", code),
-        0x9d => println!("{:02x}: SBB\tL", code),
-        0x9e => println!("{:02x}: SBB\tM", code),
-        0x9f => println!("{:02x}: SBB\tA", code),
+        0x98 => println!("{:02x}: SBC\tB", code),
+        0x99 => println!("{:02x}: SBC\tC", code),
+        0x9a => println!("{:02x}: SBC\tD", code),
+        0x9b => println!("{:02x}: SBC\tE", code),
+        0x9c => println!("{:02x}: SBC\tH", code),
+        0x9d => println!("{:02x}: SBC\tL", code),
+        0x9e => println!("{:02x}: SBC\tM", code),
+        0x9f => println!("{:02x}: SBC\tA", code),
         0xa0 => println!("{:02x}: ANA\tB", code),
         0xa1 => println!("{:02x}: ANA\tC", code),
         0xa2 => println!("{:02x}: ANA\tD", code),
@@ -414,7 +414,7 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
         0xd5 => println!("{:02x}: PUSH\tD", code),
         0xd6 => {
             println!(
-                "{:02x}: CNC\t${:02x}{:02x}",
+                "{:02x}: SUB\tA,${:02x}{:02x}",
                 code,
                 codebuffer[(pc as usize) + 2],
                 codebuffer[(pc as usize) + 1]
@@ -452,16 +452,10 @@ pub fn disassemble8080op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
             opbytes = 2;
         }
         0xdf => println!("{:02x}: RST\t3", code),
-        0xe0 => println!("{:02x}: RPO", code),
+        0xe0 => println!("{:02x}: LDH\t{:02x},A", code, codebuffer[(pc as usize) + 2]),
         0xe1 => println!("{:02x}: POP\tH", code),
         0xe2 => {
-            println!(
-                "{:02x}: JPO\t${:02x}{:02x}",
-                code,
-                codebuffer[(pc as usize) + 2],
-                codebuffer[(pc as usize) + 1]
-            );
-            opbytes = 3;
+            println!("{:02x}: LDH\t{:02x},A", code, codebuffer[(pc as usize) + 2])
         }
         0xe3 => println!("{:02x}: XTHL", code),
         0xe4 => {

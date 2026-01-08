@@ -11,7 +11,8 @@ fn main() {
         s: false,
         p: false,
         cy: false,
-        ac: false
+        ac: false,
+        ime: false
     };
 
     let mut state = em8080::State8080 {
@@ -33,8 +34,9 @@ fn main() {
         int_enable: false,
     };
 
-    let filename = "cpudiag.bin";
-    // let filename = "invaders.rom";
+    // let filename = "cpudiag.bin";
+    let filename = "gb-test-roms/cpu_instrs/cpu_instrs.gb";
+    // let filename = "gb-test-roms/mem_timing/mem_timing.gb";
     let filecontent = fs::read(filename).expect("Something wrong");
 
     for (index, data) in filecontent.iter().enumerate() {
