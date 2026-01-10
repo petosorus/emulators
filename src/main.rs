@@ -1,4 +1,4 @@
-extern crate em8080;
+extern crate gameboy;
 use std::fs;
 use std::time::Duration;
 use std::thread::sleep;
@@ -6,7 +6,7 @@ mod display;
 mod disassembler;
 
 fn main() {
-    let flags = em8080::Flags {
+    let flags = gameboy::Flags {
         z: false,
         s: false,
         p: false,
@@ -15,7 +15,7 @@ fn main() {
         ime: false
     };
 
-    let mut state = em8080::State8080 {
+    let mut state = gameboy::State8080 {
         a: 0,
         b: 0,
         c: 0,
@@ -26,7 +26,7 @@ fn main() {
         sp: 0,
         pc: 0,
         memory: {
-            em8080::Memory {
+            gameboy::Memory {
                 memory: vec![0; (u16::max_value() as usize) + 1],
             }
         },
@@ -53,7 +53,7 @@ fn main() {
         // print!("sp: ${:04x} - ", state.sp);
         // print!("pc: ${:04x} - ", state.pc);
         disassembler::disassemble8080op(&state.memory.memory, state.pc);
-        em8080::emulate8080_op(&mut state);
+        gameboy::emulate8080_op(&mut state);
         state.pc += 1;
 
         // println!("${:04x}", state.get(0x3000));
@@ -69,7 +69,7 @@ fn main() {
 
         // check for interrupts
         if state.int_enable {
-            em8080::handle_interrupt();
+            gameboy::handle_interrupt();
         }
 
         sleep(clock);

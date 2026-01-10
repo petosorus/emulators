@@ -1,11 +1,11 @@
-use em8080;
+use gameboy;
 
 #[test]
 fn nop() {
     let mut state = init_state();
     state.set(0, 0x00);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0);
     assert_eq!(state.pc, 0);
@@ -21,7 +21,7 @@ fn lxi_b() {
     state.set(1, 0x02);
     state.set(2, 0x03);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.c, 0x02);
     assert_eq!(state.b, 0x03);
@@ -34,7 +34,7 @@ fn inx_b_only_c() {
     let mut state = init_state();
     state.set(0, 0x03);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.c, 0x01);
     assert_eq!(state.b, 0x00);
@@ -49,7 +49,7 @@ fn inx_b_carry_to_b() {
     state.b = 0x00;
     state.c = 0xFF;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.c, 0x00);
     assert_eq!(state.b, 0x01);
@@ -64,7 +64,7 @@ fn inx_b_carry_to_0() {
     state.b = 0xFF;
     state.c = 0xFF;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.c, 0x00);
     assert_eq!(state.b, 0x00);
@@ -79,7 +79,7 @@ let mut state = init_state();
     state.set(0, 0x04);
     state.b = 0x00;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.b, 0x01);
     assert_eq!(state.pc, 0);
@@ -97,7 +97,7 @@ let mut state = init_state();
     state.set(0, 0x04);
     state.b = 0xFF;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.b, 0x00);
     assert_eq!(state.pc, 0);
@@ -114,7 +114,7 @@ let mut state = init_state();
     state.set(0, 0x05);
     state.b = 0x01;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.b, 0x00);
     assert_eq!(state.pc, 0);
@@ -131,7 +131,7 @@ let mut state = init_state();
     state.set(0, 0x05);
     state.b = 0x00;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.b, 0xFF);
     assert_eq!(state.pc, 0);
@@ -148,7 +148,7 @@ let mut state = init_state();
     state.set(0, 0x06);
     state.set(1, 0xFA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.b, 0xFA);
     assert_eq!(state.pc, 1);
@@ -161,7 +161,7 @@ let mut state = init_state();
     state.set(0, 0x07);
     state.a = 0b01001000;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b10010000);
     assert_eq!(state.pc, 0);
@@ -175,7 +175,7 @@ let mut state = init_state();
     state.set(0, 0x07);
     state.a = 0b10000000;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b00000001);
     assert_eq!(state.pc, 0);
@@ -192,7 +192,7 @@ fn dad_b() {
     state.h = 0;
     state.l = 0;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     let hl = get16bit(state.l, state.h);
     assert_eq!(0x0A0F, hl);
@@ -207,7 +207,7 @@ fn dad_b_carry() {
     state.h = 0;
     state.l = 0xFF;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     let hl = get16bit(state.l, state.h);
     assert_eq!(0x0B00, hl);
@@ -222,7 +222,7 @@ fn dad_b_carry_to_0() {
     state.h = 0;
     state.l = 0x01;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     let hl = get16bit(state.l, state.h);
     assert_eq!(0x0000, hl);
@@ -236,7 +236,7 @@ fn ldax_b() {
     state.c = 0x01;
     state.b = 0x00;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(0xFF, state.a);
 }
@@ -248,7 +248,7 @@ fn dcx_b() {
     state.c = 0x01;
     state.b = 0x00;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     let bc = get16bit(state.c, state.b);
     assert_eq!(0x0000, bc);
@@ -261,7 +261,7 @@ fn dcx_b_carry() {
     state.c = 0x00;
     state.b = 0xF0;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     let bc = get16bit(state.c, state.b);
     assert_eq!(0xEFFF, bc);
@@ -274,7 +274,7 @@ fn dcx_b_carry_to_ff() {
     state.c = 0x00;
     state.b = 0x00;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     let bc = get16bit(state.c, state.b);
     assert_eq!(0xFFFF, bc);
@@ -286,7 +286,7 @@ let mut state = init_state();
     state.set(0, 0x0f);
     state.a = 0b01001000;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b00100100);
     assert_eq!(state.pc, 0);
@@ -300,7 +300,7 @@ let mut state = init_state();
     state.set(0, 0x0f);
     state.a = 0b00000001;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b10000000);
     assert_eq!(state.pc, 0);
@@ -314,7 +314,7 @@ let mut state = init_state();
     state.set(0, 0x1f);
     state.a = 0b01001000;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b00100100);
     assert_eq!(state.pc, 0);
@@ -328,7 +328,7 @@ let mut state = init_state();
     state.set(0, 0x1f);
     state.a = 0b00000001;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b00000000);
     assert_eq!(state.pc, 0);
@@ -343,7 +343,7 @@ let mut state = init_state();
     state.a = 0b00000000;
     state.flags.cy = true;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b10000000);
     assert_eq!(state.pc, 0);
@@ -360,7 +360,7 @@ let mut state = init_state();
     state.set(3, 0xDE);
     state.set(4, 0xAD);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.h, 0xAD);
     assert_eq!(state.l, 0xDE);
@@ -372,7 +372,7 @@ let mut state = init_state();
     state.set(0, 0x2f);
     state.a = 0x00;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0xFF);
 }
@@ -386,7 +386,7 @@ let mut state = init_state();
     state.set(3, 0xBB);
     state.a = 0x00;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0xBB);
 }
@@ -398,7 +398,7 @@ let mut state = init_state();
     state.b = 0x00;
     state.c = 0x26;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.b, 0x26);
 }
@@ -410,7 +410,7 @@ fn add() {
     state.a = 0x00;
     state.b = 0x02;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0x02);
     assert_eq!(state.flags.z, false);
@@ -427,7 +427,7 @@ let mut state = init_state();
     state.a = 0x00;
     state.b = 0x03;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0x03);
     assert_eq!(state.flags.z, false);
@@ -444,7 +444,7 @@ fn add_zero() {
     state.a = 0x00;
     state.b = 0x00;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0x00);
     assert_eq!(state.flags.z, true);
@@ -461,7 +461,7 @@ fn ana() {
     state.a = 0b00000011;
     state.b = 0b00000110;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b00000010);
     assert_eq!(state.flags.z, false);
@@ -478,7 +478,7 @@ fn ana_sign_true() {
     state.a = 0xFF;
     state.b = 0b10000110;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b10000110);
     assert_eq!(state.flags.z, false);
@@ -495,7 +495,7 @@ fn ana_even_p() {
     state.a = 0b00010011;
     state.b = 0b00010110;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b00010010);
     assert_eq!(state.flags.z, false);
@@ -512,7 +512,7 @@ fn ana_zero() {
     state.a = 0xF0;
     state.b = 0x0F;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0x00);
     assert_eq!(state.flags.z, true);
@@ -529,7 +529,7 @@ fn xra_full() {
     state.a = 0xF0;
     state.b = 0x0F;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0xFF);
     assert_eq!(state.flags.z, false);
@@ -547,7 +547,7 @@ fn xra_even_p() {
     state.a = 0xFF;
     state.b = 0x0E;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0xF1);
     assert_eq!(state.flags.z, false);
@@ -564,7 +564,7 @@ fn xra_zero() {
     state.a = 0xFF;
     state.b = 0xFF;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0x00);
     assert_eq!(state.flags.z, true);
@@ -581,7 +581,7 @@ fn cmp() {
     state.a = 0x0A;
     state.b = 0x05;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.flags.z, false);
     assert_eq!(state.flags.s, false);
@@ -597,7 +597,7 @@ fn cmp_zero() {
     state.a = 0xFF;
     state.b = 0xFF;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.flags.z, true);
     assert_eq!(state.flags.s, false);
@@ -613,7 +613,7 @@ fn cmp_carry() {
     state.a = 0x02;
     state.b = 0x05;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.flags.z, false);
     assert_eq!(state.flags.s, true);
@@ -631,7 +631,7 @@ fn rnz() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.pc, 0xAABF);
     assert_eq!(state.sp, 0x0003);
@@ -646,7 +646,7 @@ fn rnz_zero() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.pc, 0);
     assert_eq!(state.sp, 0x0001);
@@ -663,7 +663,7 @@ fn pop() {
     state.set(2, 0xAA);
     state.set(3, 0xFF);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.b, 0xAA);
     assert_eq!(state.c, 0xBF);
@@ -678,7 +678,7 @@ fn jnz() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     // en anticipation de pc += 1 de main, on soustrait 1
     assert_eq!(state.pc, 0xAABE);
@@ -692,7 +692,7 @@ fn jnz_zero() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.pc, 0x2);
 }
@@ -705,7 +705,7 @@ fn cnz() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     // en anticipation de pc += 1 de main, on soustrait 1
     assert_eq!(state.pc, 0xAABE);
@@ -720,7 +720,7 @@ fn cnz_zero() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     // en anticipation de pc += 1 de main, on soustrait 1
     assert_eq!(state.pc, 0x02);
@@ -734,7 +734,7 @@ fn adi() {
     state.set(1, 0xAF);
     state.a = 0x00;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0xAF);
     assert_eq!(state.flags.z, false);
@@ -751,7 +751,7 @@ fn push() {
     state.d = 0xFF;
     state.e = 0xEE;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.sp, 0xFFFE);
 }
@@ -764,7 +764,7 @@ fn jc() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.pc, 0xAABE);
 }
@@ -777,7 +777,7 @@ fn jc_no_carry() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.pc, 0x02);
 }
@@ -790,7 +790,7 @@ fn cpo() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     // en anticipation de pc += 1 de main, on soustrait 1
     assert_eq!(state.pc, 0xAABE);
@@ -805,7 +805,7 @@ fn cpo_p_true() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     // en anticipation de pc += 1 de main, on soustrait 1
     assert_eq!(state.pc, 2);
@@ -820,7 +820,7 @@ fn ani() {
     state.set(1, 0b00000110);
     state.a = 0b00000011;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b00000010);
     assert_eq!(state.flags.z, false);
@@ -839,7 +839,7 @@ fn ani_sign_true() {
     state.set(1, 0b10000110);
     state.a = 0xFF;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b10000110);
     assert_eq!(state.flags.z, false);
@@ -857,7 +857,7 @@ fn ani_even_p() {
     state.set(1, 0b00010110);
     state.a = 0b00010011;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b00010010);
     assert_eq!(state.flags.z, false);
@@ -875,7 +875,7 @@ fn ani_zero() {
     state.set(1, 0x0F);
     state.a = 0xF0;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0x00);
     assert_eq!(state.flags.z, true);
@@ -894,7 +894,7 @@ fn jpe() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.pc, 0xAABE);
 }
@@ -907,7 +907,7 @@ fn jpe_no_parity() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.pc, 0x02);
 }
@@ -920,7 +920,7 @@ fn cpe() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     // en anticipation de pc += 1 de main, on soustrait 1
     assert_eq!(state.pc, 0xAABE);
@@ -935,7 +935,7 @@ fn cpo_p_false() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     // en anticipation de pc += 1 de main, on soustrait 1
     assert_eq!(state.pc, 2);
@@ -949,7 +949,7 @@ fn ori() {
     state.set(1, 0b00000110);
     state.a = 0b00000011;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b00000111);
     assert_eq!(state.flags.z, false);
@@ -968,7 +968,7 @@ fn ori_sign_true() {
     state.set(1, 0b10000110);
     state.a = 0xFF;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0xFF);
     assert_eq!(state.flags.z, false);
@@ -986,7 +986,7 @@ fn ori_even_p() {
     state.set(1, 0b00010110);
     state.a = 0b00010011;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0b00010111);
     assert_eq!(state.flags.z, false);
@@ -1004,7 +1004,7 @@ fn ori_zero() {
     state.set(1, 0x00);
     state.a = 0x00;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.a, 0x00);
     assert_eq!(state.flags.z, true);
@@ -1023,7 +1023,7 @@ fn jm() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.pc, 0xAABE);
 }
@@ -1036,7 +1036,7 @@ fn jm_positive() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.pc, 2);
 }
@@ -1049,7 +1049,7 @@ fn cm() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     // en anticipation de pc += 1 de main, on soustrait 1
     assert_eq!(state.pc, 0xAABE);
@@ -1064,7 +1064,7 @@ fn cm_positive() {
     state.set(1, 0xBF);
     state.set(2, 0xAA);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     // en anticipation de pc += 1 de main, on soustrait 1
     assert_eq!(state.pc, 2);
@@ -1078,7 +1078,7 @@ fn cpi() {
     state.set(1, 0x05);
     state.a = 0x0A;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.flags.z, false);
     assert_eq!(state.flags.s, false);
@@ -1094,7 +1094,7 @@ fn cpi_zero() {
     state.set(1, 0xff);
     state.a = 0xFF;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.flags.z, true);
     assert_eq!(state.flags.s, false);
@@ -1110,7 +1110,7 @@ fn cpi_carry() {
     state.set(1, 0x05);
     state.a = 0x02;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.flags.z, false);
     assert_eq!(state.flags.s, true);
@@ -1172,13 +1172,13 @@ fn call_ret() {
     state.set(2, 0x00);
     state.set(0x0010, 0xc9);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
     state.pc += 1;
 
     assert_eq!(state.pc, 0x0010);
     assert_eq!(state.sp, 0xFFFE);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.pc, 0x02);
     assert_eq!(state.sp, 0);
@@ -1193,13 +1193,13 @@ fn push_pop() {
 
     state.set(1, 0xD1);
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
     state.pc += 1;
 
     state.d = 0;
     state.e = 0;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.sp, 0);
     assert_eq!(state.d, 0xFF);
@@ -1217,7 +1217,7 @@ fn push_pop_psw() {
     state.flags.cy = true;
     state.flags.ac = true;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
     state.pc += 1;
 
     assert_eq!(state.sp, 0xFFFE);
@@ -1228,7 +1228,7 @@ fn push_pop_psw() {
     state.flags.cy = false;
     state.flags.ac = false;
 
-    em8080::emulate8080_op(&mut state);
+    gameboy::emulate8080_op(&mut state);
 
     assert_eq!(state.sp, 0);
     assert_eq!(state.flags.z, true);
@@ -1238,16 +1238,17 @@ fn push_pop_psw() {
     assert_eq!(state.flags.ac, true);
 }
 
-fn init_state() -> em8080::State8080 {
-    let flags = em8080::Flags {
+fn init_state() -> gameboy::State8080 {
+    let flags = gameboy::Flags {
         z: false,
         s: false,
         p: false,
         cy: false,
-        ac: false
+        ac: false,
+        ime: false
     };
 
-    em8080::State8080 {
+    gameboy::State8080 {
         a: 0,
         b: 0,
         c: 0,
@@ -1258,7 +1259,7 @@ fn init_state() -> em8080::State8080 {
         sp: 0,
         pc: 0,
         memory: {
-            em8080::Memory {
+            gameboy::Memory {
                 memory: vec![0; (u16::max_value() as usize) + 1],
             }
         },
