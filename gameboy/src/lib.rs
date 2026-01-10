@@ -344,7 +344,7 @@ fn rlc(register: &mut u8, flags: &mut Flags) {
     }
 }
 
-fn ori(register: &mut u8, data: u8, flags: &mut Flags) {
+fn or(register: &mut u8, data: u8, flags: &mut Flags) {
     flags.cy = false;
 
     *register = *register | data;
@@ -984,17 +984,17 @@ pub fn emulate8080_op(state: &mut State8080) {
             let a = state.a;
             xra(&mut state.a, a, &mut state.flags);
         }
-        0xb0 => unimplemented!(),
-        0xb1 => unimplemented!(),
-        0xb2 => unimplemented!(),
-        0xb3 => {
-            let e = state.e;
-            ori(&mut state.a, e, &mut state.flags);
-        }
-        0xb4 => unimplemented!(),
-        0xb5 => unimplemented!(),
+        0xb0 => or(&mut state.a, state.b, &mut state.flags),
+        0xb1 => or(&mut state.a, state.c, &mut state.flags),
+        0xb2 => or(&mut state.a, state.d, &mut state.flags),
+        0xb3 => or(&mut state.a, state.e, &mut state.flags),
+        0xb4 => or(&mut state.a, state.h, &mut state.flags),
+        0xb5 => or(&mut state.a, state.l, &mut state.flags),
         0xb6 => unimplemented!(),
-        0xb7 => unimplemented!(),
+        0xb7 => {
+            let a = state.a;
+            or(&mut state.a, a, &mut state.flags)
+        }
         0xb8 => cmp(state.a, state.b, &mut state.flags),
         0xb9 => cmp(state.a, state.c, &mut state.flags),
         0xba => cmp(state.a, state.d, &mut state.flags),
@@ -1067,7 +1067,11 @@ pub fn emulate8080_op(state: &mut State8080) {
                 state.pc -= 1;
             }
         }
-        0xcb => {}
+        0xcb => {
+            // PREFIX
+            // lire deux prochains octets selon le deuxième tableau d'instruction
+            // PASS
+        }
         0xcc => unimplemented!(),
         0xcd => {
             let lower_byte = state.get(state.pc + 1);
@@ -1191,7 +1195,7 @@ pub fn emulate8080_op(state: &mut State8080) {
         }
         0xf6 => {
             let data = state.get(state.pc + 1);
-            ori(&mut state.a, data, &mut state.flags);
+            or(&mut state.a, data, &mut state.flags);
             state.pc += 1;
         }
         0xf7 => unimplemented!(),

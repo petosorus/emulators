@@ -1,3 +1,5 @@
+use std::{thread::sleep, time::Duration};
+
 use minifb::{Window, Key, Scale, WindowOptions};
 
 const WIDTH: usize = 320;
@@ -25,8 +27,10 @@ fn main() {
         for y in 0..HEIGHT {
             for x in 0..WIDTH {
                 buffer[(y * WIDTH) + x] += 0xFFFF;
+                
             }
         }
+        sleep(Duration::from_secs(1));
 
         window.update_with_buffer(&buffer).unwrap();
     }
