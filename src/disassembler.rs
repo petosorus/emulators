@@ -32,7 +32,7 @@ pub fn disassemble_op(codebuffer: &Vec<u8>, pc: u16) -> u16 {
             );
             opbytes = 2;
         }
-        0x09 => println!("{:02x}: ADD\tHL?BC", code),
+        0x09 => println!("{:02x}: ADD\tHL,BC", code),
         0x0a => println!("{:02x}: LD\tA,[BC]", code),
         0x0b => println!("{:02x}: DEC\tBC", code),
         0x0c => println!("{:02x}: INC\tC", code),
