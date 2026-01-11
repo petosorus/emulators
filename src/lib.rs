@@ -187,9 +187,9 @@ fn call(pc: &mut u16, sp: &mut u16, memory: &mut Memory, adr_low: u8, adr_high: 
     // Store on stack
 
     let next_pc = *pc + 3;
-    *sp -= 1;
+    *sp = sp.wrapping_sub(1);
     *(memory.get_mut(*sp as usize)) = get_higher8(next_pc);
-    *sp -= 1;
+    *sp = sp.wrapping_sub(1);
     *(memory.get_mut(*sp as usize)) = get_lower8(next_pc);
 
     // Move to function
@@ -208,21 +208,21 @@ fn ret(pc: &mut u16, sp: &mut u16, memory: &Memory) {
     *pc = adr;
 }
 
-fn mov(target: &mut u8, source: u8) {
-    *target = source;
-}
-
 fn lxi_sp(sp: &mut u16, low: u8, high: u8) {
     *sp = get16bit(low, high);
 }
 
-fn load(register: &mut u8, memory: &Memory, adr_high: u8, adr_low: u8) {
+fn load(target: &mut u8, source: u8) {
+    *target = source;
+}
+
+fn load_registers(register: &mut u8, memory: &Memory, adr_high: u8, adr_low: u8) {
     let adr = get16bit(adr_low, adr_high);
     load_adr(register, memory, adr);
 }
 
 fn load_adr(register: &mut u8, memory: &Memory, adr: u16) {
-    *register = memory.get(adr as usize);
+    load(register,memory.get(adr as usize));
 }
 
 fn add(target: &mut u8, source: u8, flags: &mut Flags) {
@@ -370,12 +370,8 @@ fn xra(register: &mut u8, source: u8, flags: &mut Flags) {
     handle_condition_codes(*register, flags);
 }
 
-fn ld(target: &mut u8, source: u8) {
-    *target = source;
-}
-
 fn cpi(register: u8, data: u8, flags: &mut Flags) {
-    let result = register - data;
+    let result = register.wrapping_sub(data);
     if result > register {
         flags.cy = true;
     } else {
@@ -395,7 +391,7 @@ fn cmp(accumulator: u8, register: u8, flags: &mut Flags) {
 
 pub fn handle_interrupt() {}
 
-pub fn emulate8080_op(state: &mut State8080) {
+pub fn emulate_op(state: &mut State8080) {
     let code: u8 = state.get(state.pc);
 
     match code {
@@ -405,7 +401,7 @@ pub fn emulate8080_op(state: &mut State8080) {
             state.b = state.get(state.pc + 2);
             state.pc += 2;
         }
-        0x02 => unimplemented!(),
+        0x02 => {}
         0x03 => {
             inx(&mut state.b, &mut state.c);
         }
@@ -417,7 +413,7 @@ pub fn emulate8080_op(state: &mut State8080) {
         }
         0x06 => {
             let source = state.get(state.pc + 1);
-            mov(&mut state.b, source);
+            load(&mut state.b, source);
             state.pc += 1;
         }
         0x07 => {
@@ -429,7 +425,7 @@ pub fn emulate8080_op(state: &mut State8080) {
             dad(&mut state.h, &mut state.l, bc, &mut state.flags);
         }
         0x0a => {
-            load(&mut state.a, &state.memory, state.b, state.c);
+            load_registers(&mut state.a, &state.memory, state.b, state.c);
         }
         0x0b => {
             dcx(&mut state.b, &mut state.c);
@@ -442,7 +438,7 @@ pub fn emulate8080_op(state: &mut State8080) {
         }
         0x0e => {
             let source = state.get(state.pc + 1);
-            mov(&mut state.c, source);
+            load(&mut state.c, source);
             state.pc += 1;
         }
         0x0f => rrc(&mut state.a, &mut state.flags),
@@ -462,7 +458,7 @@ pub fn emulate8080_op(state: &mut State8080) {
         }
         0x16 => {
             let source = state.get(state.pc + 1);
-            mov(&mut state.d, source);
+            load(&mut state.d, source);
             state.pc += 1;
         }
         0x17 => unimplemented!(),
@@ -472,7 +468,7 @@ pub fn emulate8080_op(state: &mut State8080) {
             dad(&mut state.h, &mut state.l, de, &mut state.flags);
         }
         0x1a => {
-            load(&mut state.a, &state.memory, state.d, state.e);
+            load_registers(&mut state.a, &state.memory, state.d, state.e);
         }
         0x1b => {
             dcx(&mut state.d, &mut state.e);
@@ -485,7 +481,7 @@ pub fn emulate8080_op(state: &mut State8080) {
         }
         0x1e => {
             let source = state.get(state.pc + 1);
-            mov(&mut state.e, source);
+            load(&mut state.e, source);
             state.pc += 1;
         }
         0x1f => {
@@ -498,7 +494,7 @@ pub fn emulate8080_op(state: &mut State8080) {
             state.pc += 2;
         }
         0x22 => {
-            ld(&mut state.get(state.pc), state.a);
+            load(&mut state.get(state.pc), state.a);
             state.pc += 1;
         }
         0x23 => {
@@ -512,7 +508,7 @@ pub fn emulate8080_op(state: &mut State8080) {
         }
         0x26 => {
             let source = state.get(state.pc + 1);
-            mov(&mut state.h, source);
+            load(&mut state.h, source);
             state.pc += 1;
         }
         0x27 => unimplemented!(),
@@ -540,7 +536,7 @@ pub fn emulate8080_op(state: &mut State8080) {
         }
         0x2e => {
             let source = state.get(state.pc + 1);
-            mov(&mut state.l, source);
+            load(&mut state.l, source);
             state.pc += 1;
         }
         0x2f => {
@@ -559,7 +555,7 @@ pub fn emulate8080_op(state: &mut State8080) {
             let adressed_memory = state
                 .memory
                 .get_mut(get16bit(lower_byte, higher_byte) as usize);
-            mov(adressed_memory, state.a);
+            load(adressed_memory, state.a);
             state.pc += 2;
         }
         0x33 => unimplemented!(),
@@ -577,7 +573,7 @@ pub fn emulate8080_op(state: &mut State8080) {
             let source = state.get(state.pc + 1);
             let hl = state.get_hl();
             let register = state.get_mut(hl);
-            mov(register, source);
+            load(register, source);
             state.pc += 1;
         }
         0x37 => unimplemented!(),
@@ -589,7 +585,7 @@ pub fn emulate8080_op(state: &mut State8080) {
             let low = state.get(state.pc + 1);
             let high = state.get(state.pc + 2);
             state.pc += 2;
-            load(&mut state.a, &state.memory, high, low);
+            load_registers(&mut state.a, &state.memory, high, low);
         }
         0x3b => {
             dcx_sp(&mut state.sp);
@@ -605,231 +601,231 @@ pub fn emulate8080_op(state: &mut State8080) {
         0x3f => unimplemented!(),
         0x40 => {
             let b = state.b;
-            mov(&mut state.b, b);
+            load(&mut state.b, b);
         }
         0x41 => {
-            mov(&mut state.b, state.c);
+            load(&mut state.b, state.c);
         }
         0x42 => {
-            mov(&mut state.b, state.d);
+            load(&mut state.b, state.d);
         }
         0x43 => {
-            mov(&mut state.b, state.e);
+            load(&mut state.b, state.e);
         }
         0x44 => {
-            mov(&mut state.b, state.h);
+            load(&mut state.b, state.h);
         }
         0x45 => {
-            mov(&mut state.b, state.l);
+            load(&mut state.b, state.l);
         }
         0x46 => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
-            mov(&mut state.b, value)
+            load(&mut state.b, value)
         }
         0x47 => {
-            mov(&mut state.b, state.a);
+            load(&mut state.b, state.a);
         }
         0x48 => {
-            mov(&mut state.c, state.b);
+            load(&mut state.c, state.b);
         }
         0x49 => {
             let c = state.c;
-            mov(&mut state.c, c);
+            load(&mut state.c, c);
         }
         0x4a => {
-            mov(&mut state.c, state.d);
+            load(&mut state.c, state.d);
         }
         0x4b => {
-            mov(&mut state.c, state.e);
+            load(&mut state.c, state.e);
         }
         0x4c => {
-            mov(&mut state.c, state.h);
+            load(&mut state.c, state.h);
         }
         0x4d => {
-            mov(&mut state.c, state.l);
+            load(&mut state.c, state.l);
         }
         0x4e => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
-            mov(&mut state.c, value)
+            load(&mut state.c, value)
         }
         0x4f => {
-            mov(&mut state.c, state.a);
+            load(&mut state.c, state.a);
         }
         0x50 => {
-            mov(&mut state.d, state.b);
+            load(&mut state.d, state.b);
         }
         0x51 => {
-            mov(&mut state.d, state.c);
+            load(&mut state.d, state.c);
         }
         0x52 => {
             let d = state.d;
-            mov(&mut state.d, d);
+            load(&mut state.d, d);
         }
         0x53 => {
-            mov(&mut state.d, state.e);
+            load(&mut state.d, state.e);
         }
         0x54 => {
-            mov(&mut state.d, state.h);
+            load(&mut state.d, state.h);
         }
         0x55 => {
-            mov(&mut state.d, state.l);
+            load(&mut state.d, state.l);
         }
         0x56 => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
-            mov(&mut state.d, value)
+            load(&mut state.d, value)
         }
         0x57 => {
-            mov(&mut state.d, state.a);
+            load(&mut state.d, state.a);
         }
         0x58 => {
-            mov(&mut state.e, state.b);
+            load(&mut state.e, state.b);
         }
         0x59 => {
-            mov(&mut state.e, state.c);
+            load(&mut state.e, state.c);
         }
         0x5a => {
-            mov(&mut state.e, state.d);
+            load(&mut state.e, state.d);
         }
         0x5b => {
             let e = state.e;
-            mov(&mut state.e, e);
+            load(&mut state.e, e);
         }
         0x5c => {
-            mov(&mut state.e, state.h);
+            load(&mut state.e, state.h);
         }
         0x5d => {
-            mov(&mut state.e, state.l);
+            load(&mut state.e, state.l);
         }
         0x5e => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
-            mov(&mut state.e, value)
+            load(&mut state.e, value)
         }
         0x5f => {
-            mov(&mut state.e, state.a);
+            load(&mut state.e, state.a);
         }
         0x60 => {
-            mov(&mut state.h, state.b);
+            load(&mut state.h, state.b);
         }
-        0x61 => mov(&mut state.h, state.c),
+        0x61 => load(&mut state.h, state.c),
         0x62 => {
-            mov(&mut state.h, state.d);
+            load(&mut state.h, state.d);
         }
         0x63 => {
-            mov(&mut state.h, state.e);
+            load(&mut state.h, state.e);
         }
         0x64 => {
             let h = state.h;
-            mov(&mut state.h, h);
+            load(&mut state.h, h);
         }
         0x65 => {
-            mov(&mut state.h, state.l);
+            load(&mut state.h, state.l);
         }
         0x66 => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
-            mov(&mut state.h, value);
+            load(&mut state.h, value);
         }
         0x67 => {
-            mov(&mut state.h, state.a);
+            load(&mut state.h, state.a);
         }
         0x68 => {
-            mov(&mut state.l, state.b);
+            load(&mut state.l, state.b);
         }
         0x69 => {
-            mov(&mut state.l, state.c);
+            load(&mut state.l, state.c);
         }
         0x6a => {
-            mov(&mut state.l, state.d);
+            load(&mut state.l, state.d);
         }
         0x6b => {
-            mov(&mut state.l, state.e);
+            load(&mut state.l, state.e);
         }
         0x6c => {
-            mov(&mut state.l, state.h);
+            load(&mut state.l, state.h);
         }
         0x6d => {
             let l = state.l;
-            mov(&mut state.l, l);
+            load(&mut state.l, l);
         }
         0x6e => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
-            mov(&mut state.d, value);
+            load(&mut state.d, value);
         }
-        0x6f => mov(&mut state.l, state.a),
+        0x6f => load(&mut state.l, state.a),
         0x70 => {
             let b = state.b;
             let hl = get16bit(state.l, state.h);
             let register = state.get_mut(hl);
-            mov(register, b)
+            load(register, b)
         }
         0x71 => {
             let c = state.c;
             let hl = get16bit(state.l, state.h);
             let register = state.get_mut(hl);
-            mov(register, c)
+            load(register, c)
         }
         0x72 => {
             let d = state.d;
             let hl = get16bit(state.l, state.h);
             let register = state.get_mut(hl);
-            mov(register, d)
+            load(register, d)
         }
         0x73 => {
             let e = state.e;
             let hl = get16bit(state.l, state.h);
             let register = state.get_mut(hl);
-            mov(register, e)
+            load(register, e)
         }
         0x74 => {
             let h = state.h;
             let hl = get16bit(state.l, state.h);
             let register = state.get_mut(hl);
-            mov(register, h)
+            load(register, h)
         }
         0x75 => {
             let l = state.l;
             let hl = get16bit(state.l, state.h);
             let register = state.get_mut(hl);
-            mov(register, l)
+            load(register, l)
         }
         0x76 => unimplemented!(),
         0x77 => {
             let a = state.a;
             let hl = get16bit(state.l, state.h);
             let register = state.get_mut(hl);
-            mov(register, a)
+            load(register, a)
         }
         0x78 => {
-            mov(&mut state.a, state.b);
+            load(&mut state.a, state.b);
         }
         0x79 => {
-            mov(&mut state.a, state.c);
+            load(&mut state.a, state.c);
         }
         0x7a => {
-            mov(&mut state.a, state.d);
+            load(&mut state.a, state.d);
         }
         0x7b => {
-            mov(&mut state.a, state.e);
+            load(&mut state.a, state.e);
         }
         0x7c => {
-            mov(&mut state.a, state.h);
+            load(&mut state.a, state.h);
         }
         0x7d => {
-            mov(&mut state.a, state.l);
+            load(&mut state.a, state.l);
         }
         0x7e => {
             let hl = get16bit(state.l, state.h);
             let value = state.memory.get(hl as usize);
-            mov(&mut state.a, value);
+            load(&mut state.a, value);
         }
         0x7f => {
             let a = state.a;
-            mov(&mut state.a, a);
+            load(&mut state.a, a);
         }
         0x80 => {
             add(&mut state.a, state.b, &mut state.flags);
@@ -860,22 +856,22 @@ pub fn emulate8080_op(state: &mut State8080) {
         }
         0x88 => {
             adc(&mut state.a, state.b, &mut state.flags);
-        },
+        }
         0x89 => {
             adc(&mut state.a, state.c, &mut state.flags);
         }
         0x8a => {
             adc(&mut state.a, state.d, &mut state.flags);
-        },
+        }
         0x8b => {
             adc(&mut state.a, state.e, &mut state.flags);
         }
         0x8c => {
             adc(&mut state.a, state.h, &mut state.flags);
-        },
+        }
         0x8d => {
             adc(&mut state.a, state.l, &mut state.flags);
-        },
+        }
         0x8e => {
             let hl = state.get(state.pc);
             adc(&mut state.a, hl, &mut state.flags);
@@ -883,22 +879,22 @@ pub fn emulate8080_op(state: &mut State8080) {
         0x8f => {
             let a = state.a;
             adc(&mut state.a, a, &mut state.flags);
-        },
+        }
         0x90 => {
             sub(&mut state.a, state.b, &mut state.flags);
-        },
+        }
         0x91 => {
             sub(&mut state.a, state.c, &mut state.flags);
-        },
+        }
         0x92 => {
             sub(&mut state.a, state.d, &mut state.flags);
-        },
+        }
         0x93 => {
             sub(&mut state.a, state.e, &mut state.flags);
-        },
+        }
         0x94 => {
             sub(&mut state.a, state.h, &mut state.flags);
-        },
+        }
         0x95 => {
             sub(&mut state.a, state.l, &mut state.flags);
         }
@@ -906,7 +902,7 @@ pub fn emulate8080_op(state: &mut State8080) {
         0x97 => {
             let a = state.a;
             sub(&mut state.a, a, &mut state.flags);
-        },
+        }
         0x98 => {
             sbc(&mut state.a, state.b, &mut state.flags);
         }
@@ -918,7 +914,7 @@ pub fn emulate8080_op(state: &mut State8080) {
         }
         0x9b => {
             sbc(&mut state.a, state.e, &mut state.flags);
-        },
+        }
         0x9c => {
             sbc(&mut state.a, state.h, &mut state.flags);
         }
@@ -1068,9 +1064,8 @@ pub fn emulate8080_op(state: &mut State8080) {
             }
         }
         0xcb => {
-            // PREFIX
-            // lire deux prochains octets selon le deuxième tableau d'instruction
-            // PASS
+            state.pc += 1;
+            emulate_prefix(state);
         }
         0xcc => unimplemented!(),
         0xcd => {
@@ -1100,7 +1095,7 @@ pub fn emulate8080_op(state: &mut State8080) {
         0xd6 => {
             let pc = state.get(state.pc);
             sub(&mut state.a, pc, &mut state.flags);
-        },
+        }
         0xd7 => unimplemented!(),
         0xd8 => unimplemented!(),
         0xd9 => {}
@@ -1120,14 +1115,14 @@ pub fn emulate8080_op(state: &mut State8080) {
         0xde => unimplemented!(),
         0xdf => unimplemented!(),
         0xe0 => {
-            ld(&mut state.get(state.pc), state.a);
+            load(&mut state.get(state.pc), state.a);
         }
         0xe1 => {
             pop(&mut state.sp, &state.memory, &mut state.h, &mut state.l);
         }
         0xe2 => {
-            ld(&mut state.a, state.c);
-        },
+            load(&mut state.a, state.c);
+        }
         0xe3 => {
             //PASS
             //XTHL
@@ -1230,5 +1225,269 @@ pub fn emulate8080_op(state: &mut State8080) {
             state.pc += 1;
         }
         0xff => call(&mut state.pc, &mut state.sp, &mut state.memory, 8, 3),
+    }
+
+}
+
+fn emulate_prefix(state: &mut State8080) {
+    let code: u8 = state.get(state.pc);
+
+    match code {
+        0x00 => println!("RLC B"),
+        0x01 => println!("RLC C"),
+        0x02 => println!("RLC D"),
+        0x03 => println!("RLC E"),
+        0x04 => println!("RLC H"),
+        0x05 => println!("RLC L"),
+        0x06 => println!("RLC [HL]"),
+        0x07 => println!("RLC A"),
+        0x08 => println!("RRC B"),
+        0x09 => println!("RRC C"),
+        0x0a => println!("RRC D"),
+        0x0b => println!("RRC E"),
+        0x0c => println!("RRC H"),
+        0x0d => println!("RRC L"),
+        0x0e => println!("RRC [HL]"),
+        0x0f => println!("RRC A"),
+        0x10 => println!("RL B"),
+        0x11 => println!("RL C"),
+        0x12 => println!("RL D"),
+        0x13 => println!("RL E"),
+        0x14 => println!("RL H"),
+        0x15 => println!("RL L"),
+        0x16 => println!("RL [HL]"),
+        0x17 => println!("RL A"),
+        0x18 => println!("RR B"),
+        0x19 => println!("RR C"),
+        0x1a => println!("RR D"),
+        0x1b => println!("RR E"),
+        0x1c => println!("RR H"),
+        0x1d => println!("RR L"),
+        0x1e => println!("RR [HL]"),
+        0x1f => println!("RR A"),
+        0x20 => println!("SLA B"),
+        0x21 => println!("SLA C"),
+        0x22 => println!("SLA D"),
+        0x23 => println!("SLA E"),
+        0x24 => println!("SLA H"),
+        0x25 => println!("SLA L"),
+        0x26 => println!("SLA [HL]"),
+        0x27 => println!("SLA A"),
+        0x28 => println!("SRA B"),
+        0x29 => println!("SRA C"),
+        0x2a => println!("SRA D"),
+        0x2b => println!("SRA E"),
+        0x2c => println!("SRA H"),
+        0x2d => println!("SRA L"),
+        0x2e => println!("SRA [HL]"),
+        0x2f => println!("SRA A"),
+        0x30 => println!("SWAP B"),
+        0x31 => println!("SWAP C"),
+        0x32 => println!("SWAP D"),
+        0x33 => println!("SWAP E"),
+        0x34 => println!("SWAP H"),
+        0x35 => println!("SWAP L"),
+        0x36 => println!("SWAP [HL]"),
+        0x37 => println!("SWAP A"),
+        0x38 => println!("SRL B"),
+        0x39 => println!("SRL C"),
+        0x3a => println!("SRL D"),
+        0x3b => println!("SRL E"),
+        0x3c => println!("SRL H"),
+        0x3d => println!("SRL L"),
+        0x3e => println!("SRL [HL]"),
+        0x3f => println!("SRL A"),
+        0x40 => println!("BIT 0,B"),
+        0x41 => println!("BIT 0,C"),
+        0x42 => println!("BIT 0,D"),
+        0x43 => println!("BIT 0,E"),
+        0x44 => println!("BIT 0,H"),
+        0x45 => println!("BIT 0,L"),
+        0x46 => println!("BIT 0,[HL]"),
+        0x47 => println!("BIT 0,A"),
+        0x48 => println!("BIT 1,B"),
+        0x49 => println!("BIT 1,C"),
+        0x4a => println!("BIT 1,D"),
+        0x4b => println!("BIT 1,E"),
+        0x4c => println!("BIT 1,H"),
+        0x4d => println!("BIT 1,L"),
+        0x4e => println!("BIT 1,[HL]"),
+        0x4f => println!("BIT 1,A"),
+        0x50 => println!("BIT 2,B"),
+        0x51 => println!("BIT 2,C"),
+        0x52 => println!("BIT 2,D"),
+        0x53 => println!("BIT 2,E"),
+        0x54 => println!("BIT 2,H"),
+        0x55 => println!("BIT 2,L"),
+        0x56 => println!("BIT 2,[HL]"),
+        0x57 => println!("BIT 2,A"),
+        0x58 => println!("BIT 3,B"),
+        0x59 => println!("BIT 3,C"),
+        0x5a => println!("BIT 3,D"),
+        0x5b => println!("BIT 3,E"),
+        0x5c => println!("BIT 3,H"),
+        0x5d => println!("BIT 3,L"),
+        0x5e => println!("BIT 3,[HL]"),
+        0x5f => println!("BIT 3,A"),
+        0x60 => println!("BIT 4,B"),
+        0x61 => println!("BIT 4,C"),
+        0x62 => println!("BIT 4,D"),
+        0x63 => println!("BIT 4,E"),
+        0x64 => println!("BIT 4,H"),
+        0x65 => println!("BIT 4,L"),
+        0x66 => println!("BIT 4,[HL]"),
+        0x67 => println!("BIT 4,A"),
+        0x68 => println!("BIT 5,B"),
+        0x69 => println!("BIT 5,C"),
+        0x6a => println!("BIT 5,D"),
+        0x6b => println!("BIT 5,E"),
+        0x6c => println!("BIT 5,H"),
+        0x6d => println!("BIT 5,L"),
+        0x6e => println!("BIT 5,[HL]"),
+        0x6f => println!("BIT 5,A"),
+        0x70 => println!("BIT 6,B"),
+        0x71 => println!("BIT 6,C"),
+        0x72 => println!("BIT 6,D"),
+        0x73 => println!("BIT 6,E"),
+        0x74 => println!("BIT 6,H"),
+        0x75 => println!("BIT 6,L"),
+        0x76 => println!("BIT 6,[HL]"),
+        0x77 => println!("BIT 6,A"),
+        0x78 => println!("BIT 7,B"),
+        0x79 => println!("BIT 7,C"),
+        0x7a => println!("BIT 7,D"),
+        0x7b => println!("BIT 7,E"),
+        0x7c => println!("BIT 7,H"),
+        0x7d => println!("BIT 7,L"),
+        0x7e => println!("BIT 7,[HL]"),
+        0x7f => println!("BIT 7,A"),
+        0x80 => println!("RES 0,B"),
+        0x81 => println!("RES 0,C"),
+        0x82 => println!("RES 0,D"),
+        0x83 => println!("RES 0,E"),
+        0x84 => println!("RES 0,H"),
+        0x85 => println!("RES 0,L"),
+        0x86 => println!("RES 0,[HL]"),
+        0x87 => println!("RES 0,A"),
+        0x88 => println!("RES 1,B"),
+        0x89 => println!("RES 1,C"),
+        0x8a => println!("RES 1,D"),
+        0x8b => println!("RES 1,E"),
+        0x8c => println!("RES 1,H"),
+        0x8d => println!("RES 1,L"),
+        0x8e => println!("RES 1,[HL]"),
+        0x8f => println!("RES 1,A"),
+        0x90 => println!("RES 2,B"),
+        0x91 => println!("RES 2,C"),
+        0x92 => println!("RES 2,D"),
+        0x93 => println!("RES 2,E"),
+        0x94 => println!("RES 2,H"),
+        0x95 => println!("RES 2,L"),
+        0x96 => println!("RES 2,[HL]"),
+        0x97 => println!("RES 2,A"),
+        0x98 => println!("RES 3,B"),
+        0x99 => println!("RES 3,C"),
+        0x9a => println!("RES 3,D"),
+        0x9b => println!("RES 3,E"),
+        0x9c => println!("RES 3,H"),
+        0x9d => println!("RES 3,L"),
+        0x9e => println!("RES 3,[HL]"),
+        0x9f => println!("RES 3,A"),
+        0xa0 => println!("RES 4,B"),
+        0xa1 => println!("RES 4,C"),
+        0xa2 => println!("RES 4,D"),
+        0xa3 => println!("RES 4,E"),
+        0xa4 => println!("RES 4,H"),
+        0xa5 => println!("RES 4,L"),
+        0xa6 => println!("RES 4,[HL]"),
+        0xa7 => println!("RES 4,A"),
+        0xa8 => println!("RES 5,B"),
+        0xa9 => println!("RES 5,C"),
+        0xaa => println!("RES 5,D"),
+        0xab => println!("RES 5,E"),
+        0xac => println!("RES 5,H"),
+        0xad => println!("RES 5,L"),
+        0xae => println!("RES 5,[HL]"),
+        0xaf => println!("RES 5,A"),
+        0xb0 => println!("RES 6,B"),
+        0xb1 => println!("RES 6,C"),
+        0xb2 => println!("RES 6,D"),
+        0xb3 => println!("RES 6,E"),
+        0xb4 => println!("RES 6,H"),
+        0xb5 => println!("RES 6,L"),
+        0xb6 => println!("RES 6,[HL]"),
+        0xb7 => println!("RES 6,A"),
+        0xb8 => println!("RES 7,B"),
+        0xb9 => println!("RES 7,C"),
+        0xba => println!("RES 7,D"),
+        0xbb => println!("RES 7,E"),
+        0xbc => println!("RES 7,H"),
+        0xbd => println!("RES 7,L"),
+        0xbe => println!("RES 7,[HL]"),
+        0xbf => println!("RES 7,A"),
+        0xc0 => println!("SET 0,B"),
+        0xc1 => println!("SET 0,C"),
+        0xc2 => println!("SET 0,D"),
+        0xc3 => println!("SET 0,E"),
+        0xc4 => println!("SET 0,H"),
+        0xc5 => println!("SET 0,L"),
+        0xc6 => println!("SET 0,[HL]"),
+        0xc7 => println!("SET 0,A"),
+        0xc8 => println!("SET 1,B"),
+        0xc9 => println!("SET 1,C"),
+        0xca => println!("SET 1,D"),
+        0xcb => println!("SET 1,E"),
+        0xcc => println!("SET 1,H"),
+        0xcd => println!("SET 1,L"),
+        0xce => println!("SET 1,[HL]"),
+        0xcf => println!("SET 1,A"),
+        0xd0 => println!("SET 2,B"),
+        0xd1 => println!("SET 2,C"),
+        0xd2 => println!("SET 2,D"),
+        0xd3 => println!("SET 2,E"),
+        0xd4 => println!("SET 2,H"),
+        0xd5 => println!("SET 2,L"),
+        0xd6 => println!("SET 2,[HL]"),
+        0xd7 => println!("SET 2,A"),
+        0xd8 => println!("SET 3,B"),
+        0xd9 => println!("SET 3,C"),
+        0xda => println!("SET 3,D"),
+        0xdb => println!("SET 3,E"),
+        0xdc => println!("SET 3,H"),
+        0xdd => println!("SET 3,L"),
+        0xde => println!("SET 3,[HL]"),
+        0xdf => println!("SET 3,A"),
+        0xe0 => println!("SET 4,B"),
+        0xe1 => println!("SET 4,C"),
+        0xe2 => println!("SET 4,D"),
+        0xe3 => println!("SET 4,E"),
+        0xe4 => println!("SET 4,H"),
+        0xe5 => println!("SET 4,L"),
+        0xe6 => println!("SET 4,[HL]"),
+        0xe7 => println!("SET 4,A"),
+        0xe8 => println!("SET 5,B"),
+        0xe9 => println!("SET 5,C"),
+        0xea => println!("SET 5,D"),
+        0xeb => println!("SET 5,E"),
+        0xec => println!("SET 5,H"),
+        0xed => println!("SET 5,L"),
+        0xee => println!("SET 5,[HL]"),
+        0xef => println!("SET 5,A"),
+        0xf0 => println!("SET 6,B"),
+        0xf1 => println!("SET 6,C"),
+        0xf2 => println!("SET 6,D"),
+        0xf3 => println!("SET 6,E"),
+        0xf4 => println!("SET 6,H"),
+        0xf5 => println!("SET 6,L"),
+        0xf6 => println!("SET 6,[HL]"),
+        0xf7 => println!("SET 6,A"),
+        0xf8 => println!("SET 7,B"),
+        0xf9 => println!("SET 7,C"),
+        0xfa => println!("SET 7,D"),
+        0xfb => println!("SET 7,E"),
+        0xfc => println!("SET 7,H"),
+        0xfd => println!("SET 7,L"),
+        0xfe => println!("SET 7,[HL]"),
+        0xff => println!("SET 7,A")
     }
 }

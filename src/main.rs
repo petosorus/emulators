@@ -1,9 +1,9 @@
 extern crate gameboy;
 use std::fs;
-use std::time::Duration;
 use std::thread::sleep;
-mod display;
+use std::time::Duration;
 mod disassembler;
+mod display;
 
 fn main() {
     let flags = gameboy::Flags {
@@ -12,7 +12,7 @@ fn main() {
         p: false,
         cy: false,
         ac: false,
-        ime: false
+        ime: false,
     };
 
     let mut state = gameboy::State8080 {
@@ -52,8 +52,8 @@ fn main() {
     while (state.pc as usize) < state.memory.memory.len() {
         // print!("sp: ${:04x} - ", state.sp);
         // print!("pc: ${:04x} - ", state.pc);
-        disassembler::disassemble8080op(&state.memory.memory, state.pc);
-        gameboy::emulate8080_op(&mut state);
+        disassembler::disassemble_op(&state.memory.memory, state.pc);
+        gameboy::emulate_op(&mut state);
         state.pc += 1;
 
         // println!("${:04x}", state.get(0x3000));
