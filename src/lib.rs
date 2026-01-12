@@ -405,7 +405,7 @@ pub fn emulate_op(state: &mut State8080) {
         0x01 => {
             state.c = state.get(state.pc + 1);
             state.b = state.get(state.pc + 2);
-            state.pc += 2;
+            state.pc = state.pc.wrapping_add(2);
         }
         0x02 => {}
         0x03 => {
@@ -420,7 +420,7 @@ pub fn emulate_op(state: &mut State8080) {
         0x06 => {
             let source = state.get(state.pc + 1);
             load(&mut state.b, source);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0x07 => {
             rlc(&mut state.a, &mut state.flags);
@@ -445,14 +445,14 @@ pub fn emulate_op(state: &mut State8080) {
         0x0e => {
             let source = state.get(state.pc + 1);
             load(&mut state.c, source);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0x0f => rrc(&mut state.a, &mut state.flags),
         0x10 => {}
         0x11 => {
             state.e = state.get(state.pc + 1);
             state.d = state.get(state.pc + 2);
-            state.pc += 2;
+            state.pc = state.pc.wrapping_add(2);
         }
         0x12 => {
             state.set(get16bit(state.e, state.d), state.a);
@@ -467,7 +467,7 @@ pub fn emulate_op(state: &mut State8080) {
         0x16 => {
             let source = state.get(state.pc + 1);
             load(&mut state.d, source);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0x17 => rl(&mut state.a, &mut state.flags),
         0x18 => {}
@@ -490,7 +490,7 @@ pub fn emulate_op(state: &mut State8080) {
         0x1e => {
             let source = state.get(state.pc + 1);
             load(&mut state.e, source);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0x1f => {
             rar(&mut state.a, &mut state.flags);
@@ -499,11 +499,11 @@ pub fn emulate_op(state: &mut State8080) {
         0x21 => {
             state.l = state.get(state.pc + 1);
             state.h = state.get(state.pc + 2);
-            state.pc += 2;
+            state.pc = state.pc.wrapping_add(2);
         }
         0x22 => {
             load(&mut state.get(state.pc), state.a);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0x23 => {
             inx(&mut state.h, &mut state.l);
@@ -517,7 +517,7 @@ pub fn emulate_op(state: &mut State8080) {
         0x26 => {
             let source = state.get(state.pc + 1);
             load(&mut state.h, source);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0x27 => unimplemented!(),
         0x28 => {}
@@ -545,7 +545,7 @@ pub fn emulate_op(state: &mut State8080) {
         0x2e => {
             let source = state.get(state.pc + 1);
             load(&mut state.l, source);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0x2f => {
             cma(&mut state.a);
@@ -555,7 +555,7 @@ pub fn emulate_op(state: &mut State8080) {
             let low = state.get(state.pc + 1);
             let high = state.get(state.pc + 2);
             lxi_sp(&mut state.sp, low, high);
-            state.pc += 2;
+            state.pc = state.pc.wrapping_add(2);
         }
         0x32 => {
             let lower_byte = state.get(state.pc + 1);
@@ -564,7 +564,7 @@ pub fn emulate_op(state: &mut State8080) {
                 .memory
                 .get_mut(get16bit(lower_byte, higher_byte) as usize);
             load(adressed_memory, state.a);
-            state.pc += 2;
+            state.pc = state.pc.wrapping_add(2);
         }
         0x33 => inr(&mut state.get(state.sp), &mut state.flags),
         0x34 => {
@@ -582,7 +582,7 @@ pub fn emulate_op(state: &mut State8080) {
             let hl = state.get_hl();
             let register = state.get_mut(hl);
             load(register, source);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0x37 => state.flags.cy = true,
         0x38 => {}
@@ -592,7 +592,7 @@ pub fn emulate_op(state: &mut State8080) {
         0x3a => {
             let low = state.get(state.pc + 1);
             let high = state.get(state.pc + 2);
-            state.pc += 2;
+            state.pc = state.pc.wrapping_add(2);
             load_registers(&mut state.a, &state.memory, high, low);
         }
         0x3b => {
@@ -604,7 +604,7 @@ pub fn emulate_op(state: &mut State8080) {
         0x3d => dcr(&mut state.a, &mut state.flags),
         0x3e => {
             state.a = state.get(state.pc + 1);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0x3f => state.flags.cy = !state.flags.cy,
         0x40 => {
@@ -1033,25 +1033,25 @@ pub fn emulate_op(state: &mut State8080) {
                 let lower_byte = state.get(state.pc + 1);
                 let higher_byte = state.get(state.pc + 2);
                 state.pc = get16bit(lower_byte, higher_byte);
-                state.pc -= 1;
+                state.pc = state.pc.wrapping_sub(1);
             } else {
-                state.pc += 2;
+                state.pc = state.pc.wrapping_add(2);
             }
         }
         0xc3 => {
             let lower_byte = state.get(state.pc + 1);
             let higher_byte = state.get(state.pc + 2);
             state.pc = get16bit(lower_byte, higher_byte);
-            state.pc -= 1;
+            state.pc = state.pc.wrapping_sub(1);
         }
         0xc4 => {
             if !state.flags.z {
                 let low = state.get(state.pc + 1);
                 let high = state.get(state.pc + 2);
                 call(&mut state.pc, &mut state.sp, &mut state.memory, low, high);
-                state.pc -= 1;
+                state.pc = state.pc.wrapping_sub(1);
             } else {
-                state.pc += 2
+                state.pc = state.pc.wrapping_add(2)
             }
         }
         0xc5 => {
@@ -1060,7 +1060,7 @@ pub fn emulate_op(state: &mut State8080) {
         0xc6 => {
             let data = state.get(state.pc + 1);
             add(&mut state.a, data, &mut state.flags);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0xc7 => unimplemented!(),
         0xc8 => {
@@ -1070,18 +1070,18 @@ pub fn emulate_op(state: &mut State8080) {
         }
         0xc9 => {
             ret(&mut state.pc, &mut state.sp, &state.memory);
-            state.pc -= 1;
+            state.pc = state.pc.wrapping_sub(1);
         }
         0xca => {
             if state.flags.z {
                 let lower_byte = state.get(state.pc + 1);
                 let higher_byte = state.get(state.pc + 2);
                 state.pc = get16bit(lower_byte, higher_byte);
-                state.pc -= 1;
+                state.pc = state.pc.wrapping_sub(1);
             }
         }
         0xcb => {
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
             emulate_prefix(state);
         }
         0xcc => unimplemented!(),
@@ -1095,12 +1095,12 @@ pub fn emulate_op(state: &mut State8080) {
                 lower_byte,
                 higher_byte,
             );
-            state.pc -= 1;
+            state.pc = state.pc.wrapping_sub(1);
         }
         0xce => {
             let data = state.get(state.pc);
             adc(&mut state.a, data, &mut state.flags);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0xcf => unimplemented!(),
         0xd0 => unimplemented!(),
@@ -1108,7 +1108,7 @@ pub fn emulate_op(state: &mut State8080) {
             pop(&mut state.sp, &state.memory, &mut state.d, &mut state.e);
         }
         0xd2 => unimplemented!(),
-        0xd3 => state.pc += 1,
+        0xd3 => state.pc = state.pc.wrapping_add(1),
         0xd4 => unimplemented!(),
         0xd5 => {
             push(&mut state.sp, &mut state.memory, state.d, state.e);
@@ -1125,9 +1125,9 @@ pub fn emulate_op(state: &mut State8080) {
                 let low = state.get(state.pc + 1);
                 let high = state.get(state.pc + 2);
                 state.pc = get16bit(low, high);
-                state.pc -= 1;
+                state.pc = state.pc.wrapping_sub(1);
             } else {
-                state.pc += 2;
+                state.pc = state.pc.wrapping_add(2);
             }
         }
         0xdb => {
@@ -1140,7 +1140,7 @@ pub fn emulate_op(state: &mut State8080) {
         0xde => {
             let data = state.get(state.pc + 1);
             sbc(&mut state.a, data, &mut state.flags);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         },
         0xdf => unimplemented!(),
         0xe0 => {
@@ -1161,9 +1161,9 @@ pub fn emulate_op(state: &mut State8080) {
                 let low = state.get(state.pc + 1);
                 let high = state.get(state.pc + 2);
                 call(&mut state.pc, &mut state.sp, &mut state.memory, low, high);
-                state.pc -= 1;
+                state.pc = state.pc.wrapping_sub(1);
             } else {
-                state.pc += 2;
+                state.pc = state.pc.wrapping_add(2);
             }
         }
         0xe5 => {
@@ -1172,7 +1172,7 @@ pub fn emulate_op(state: &mut State8080) {
         0xe6 => {
             let data = state.get(state.pc + 1);
             ani(&mut state.a, data, &mut state.flags);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0xe7 => unimplemented!(),
         0xe8 => {
@@ -1185,9 +1185,9 @@ pub fn emulate_op(state: &mut State8080) {
                 let lower_byte = state.get(state.pc + 1);
                 let higher_byte = state.get(state.pc + 2);
                 state.pc = get16bit(lower_byte, higher_byte);
-                state.pc -= 1;
+                state.pc = state.pc.wrapping_sub(1);
             } else {
-                state.pc += 2;
+                state.pc = state.pc.wrapping_add(2);
             }
         }
         0xeb => {
@@ -1202,7 +1202,7 @@ pub fn emulate_op(state: &mut State8080) {
         0xee => {
             let data = state.get(state.pc + 1);
             xor(&mut state.a, data, &mut state.flags);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0xef => unimplemented!(),
         0xf0 => unimplemented!(),
@@ -1225,7 +1225,7 @@ pub fn emulate_op(state: &mut State8080) {
         0xf6 => {
             let data = state.get(state.pc + 1);
             or(&mut state.a, data, &mut state.flags);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0xf7 => unimplemented!(),
         0xf8 => {
@@ -1240,22 +1240,22 @@ pub fn emulate_op(state: &mut State8080) {
             state.h = get_higher8(data);
             state.l = get_lower8(data);
 
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0xf9 => {
             state.h = get_higher8(state.sp);
             state.l = get_lower8(state.sp);
 
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0xfa => {
             if state.flags.s {
                 let low = state.get(state.pc + 1);
                 let high = state.get(state.pc + 2);
                 state.pc = get16bit(low, high);
-                state.pc -= 1;
+                state.pc = state.pc.wrapping_sub(1);
             } else {
-                state.pc += 2;
+                state.pc = state.pc.wrapping_add(2);
             }
         }
         0xfb => {
@@ -1266,15 +1266,15 @@ pub fn emulate_op(state: &mut State8080) {
                 let low = state.get(state.pc + 1);
                 let high = state.get(state.pc + 2);
                 call(&mut state.pc, &mut state.sp, &mut state.memory, low, high);
-                state.pc -= 1;
+                state.pc = state.pc.wrapping_sub(1);
             } else {
-                state.pc += 2;
+                state.pc = state.pc.wrapping_add(2);
             }
         }
         0xfd => {}
         0xfe => {
             cpi(state.a, state.get(state.pc + 1), &mut state.flags);
-            state.pc += 1;
+            state.pc = state.pc.wrapping_add(1);
         }
         0xff => call(&mut state.pc, &mut state.sp, &mut state.memory, 8, 3),
     }

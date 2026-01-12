@@ -35,8 +35,8 @@ fn main() {
     };
 
     // let filename = "cpudiag.bin";
-    let filename = "gb-test-roms/cpu_instrs/cpu_instrs.gb";
-    // let filename = "gb-test-roms/mem_timing/mem_timing.gb";
+    // let filename = "gb-test-roms/cpu_instrs/cpu_instrs.gb";
+    let filename = "gb-test-roms/mem_timing/mem_timing.gb";
     let filecontent = fs::read(filename).expect("Something wrong");
 
     for (index, data) in filecontent.iter().enumerate() {
@@ -54,7 +54,7 @@ fn main() {
         // print!("pc: ${:04x} - ", state.pc);
         disassembler::disassemble_op(&state.memory.memory, state.pc);
         gameboy::emulate_op(&mut state);
-        state.pc += 1;
+        state.pc = state.pc.wrapping_add(1);
 
         // println!("${:04x}", state.get(0x3000));
         // print!("hl {:04x}\t", state.get_hl());
